@@ -84,8 +84,8 @@ AUTHENTICATION_BACKENDS = [
     'social_core.backends.google.GoogleOAuth2',
 ]
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '834014884051-5ete3phku05310rpan9f6uutgaj0dbes.apps.googleusercontent.com' # Google Client ID
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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' # Google Client Secret
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '834014884051-5ete3phku05310rpan9f6uutgaj0dbes.apps.googleusercontent.com'  # Google Client ID
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'  # Google Client Secret
 
 SOCIAL_AUTH_PIPELINE = [
     'social_core.pipeline.social_auth.social_details',
