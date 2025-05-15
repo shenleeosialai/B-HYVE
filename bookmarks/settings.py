@@ -71,7 +71,8 @@ TEMPLATES = [
 
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'login'
-LOGOUT = 'logout'
+LOGOUT_REDIRECT_URL = 'dashboard'
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -86,6 +87,7 @@ AUTHENTICATION_BACKENDS = [
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '834014884051-5ete3phku05310rpan9f6uutgaj0dbes.apps.googleusercontent.com'  # Google Client ID
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'  # Google Client Secret
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 SOCIAL_AUTH_PIPELINE = [
     'social_core.pipeline.social_auth.social_details',
