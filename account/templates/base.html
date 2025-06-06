@@ -1,28 +1,32 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
+    <link rel="icon" href="{% static 'images/favicon.ico' %}">
     <link href="{% static 'css/base.css' %}" rel="stylesheet">
 </head>
 
 <body>
-    <div id="header">
+    <header id="header">
         <span class="logo">Bookmarks</span>
         {% if request.user.is_authenticated %}
-        <ul class="menu">
-            <li {% if section == "dashboard" %}class="selected" {% endif %}>
-                <a href="{% url 'dashboard' %}">My dashboard</a>
-            </li>
-            <li {% if section == "images" %}class="selected" {% endif %}>
-                <a href="#">Images</a>
-            </li>
-            <li {% if section == "people" %}class="selected" {% endif %}>
-                <a href="#">People</a>
-            </li>
-        </ul>
+        <nav>
+            <ul class="menu">
+                <li {% if section == "dashboard" %}class="selected" {% endif %}>
+                    <a href="{% url 'dashboard' %}">My dashboard</a>
+                </li>
+                <li {% if section == "images" %}class="selected" {% endif %}>
+                    <a href="{% url 'images:list' %}">Images</a>
+                </li>
+                <li {% if section == "people" %}class="selected" {% endif %}>
+                    <a href="#">People</a>
+                </li>
+            </ul>
+        </nav>
         {% endif %}
         <span class="user">
             {% if request.user.is_authenticated %}
@@ -38,30 +42,56 @@
             <a href="{% url 'login' %}">Log-in</a>
             {% endif %}
         </span>
-    </div>
+    </header>
 
     {% if messages %}
     <ul class="messages">
         {% for message in messages %}
         <li class="{{ message.tags }}">
             {{ message|safe }}
-            <a href="#" class="close">x</a>
+            <button class="close" aria-label="Close message">×</button>
         </li>
         {% endfor %}
     </ul>
     {% endif %}
 
-    <div id="content">
+    <main id="content">
         {% block content %}
         {% endblock %}
-    </div>
+    </main>
     <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            // DOM loaded
-            {% block domready %}
-            {% endblock %}
-        })
-    </script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // Close messages when 'x' button is clicked
+        document.querySelectorAll('.messages .close').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                btn.parentElement.style.display = 'none';
+            });
+        });
+
+        {% block domready %}
+        {% endblock %}
+    });
+</script>
+
+
 </body>
 
 </html>
