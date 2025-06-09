@@ -23,8 +23,9 @@
                     <a href="{% url 'images:list' %}">Images</a>
                 </li>
                 <li {% if section == "people" %}class="selected" {% endif %}>
-                    <a href="#">People</a>
+                    <a href="{% url 'user_list' %}">People</a>
                 </li>
+
             </ul>
         </nav>
         {% endif %}
@@ -60,36 +61,36 @@
         {% endblock %}
     </main>
     <script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
 
-    const csrftoken = getCookie('csrftoken');
+        const csrftoken = getCookie('csrftoken');
 
-    document.addEventListener('DOMContentLoaded', (event) => {
-        // Close messages when 'x' button is clicked
-        document.querySelectorAll('.messages .close').forEach(btn => {
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                btn.parentElement.style.display = 'none';
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Close messages when 'x' button is clicked
+            document.querySelectorAll('.messages .close').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    btn.parentElement.style.display = 'none';
+                });
             });
-        });
 
-        {% block domready %}
-        {% endblock %}
-    });
-</script>
+            {% block domready %}
+            {% endblock %}
+        });
+    </script>
 
 
 </body>

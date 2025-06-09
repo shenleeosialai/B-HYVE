@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+{% load static %}
+
+{% block title %}{{ user.get_full_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ user.get_full_name }}</h1>
+
+<div class="profile-info">
+  {% if user.profile.photo %}
+    <img src="{% thumbnail user.profile.photo 180x180 %}" class="user-detail" alt="{{ user.get_full_name }}">
+  {% else %}
+    <img src="{% static 'img/default_profile.png' %}" width="180" height="180" class="user-detail" alt="Default profile photo">
+  {% endif %}
+</div>
+
+{% with total_followers=user.followers.count %}
+  <span class="count">
+    <span class="total">{{ total_followers }}</span>
+    follower{{ total_followers|pluralize }}
+  </span>
+  <a href="#" data-id="{{ user.id }}" data-action="{% if request.user in user.followers.all %}un{% endif %}follow"
+     class="follow button">
+    {% if request.user not in user.followers.all %}
+      Follow
+    {% else %}
+      Unfollow
+    {% endif %}
+  </a>
+
+  <div id="image-list" class="image-container">
+    {% include "images/image/list_images.html" with images=user.images_created.all %}
+  </div>
+{% endwith %}
+{% endblock %}
+
+{% block domready %}
+const url = '{% url "user_follow" %}';
+const followButton = document.querySelector('a.follow');
+const options = {
+  method: 'POST',
+  headers: {'X-CSRFToken': csrftoken},
+  mode: 'same-origin'
+};
+
+followButton.addEventListener('click', function(e) {
+  e.preventDefault();
+  const action = followButton.dataset.action;
+  const formData = new FormData();
+  formData.append('id', followButton.dataset.id);
+  formData.append('action', action);
+  options.body = formData;
+
+  fetch(url, options)
+    .then(response => response.json())
+    .then(data => {
+      if (data['status'] === 'ok') {
+        const newAction = action === 'follow' ? 'unfollow' : 'follow';
+        followButton.dataset.action = newAction;
+        followButton.innerHTML = newAction;
+
+        const followerCount = document.querySelector('span.count .total');
+        let total = parseInt(followerCount.innerHTML);
+        followerCount.innerHTML = action === 'follow' ? total + 1 : total - 1;
+      }
+    });
+});
+{% endblock %}
