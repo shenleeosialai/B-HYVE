@@ -12,8 +12,6 @@ from actions.utils import create_action
 from django.conf import settings
 
 
-
-
 @login_required
 def image_create(request):
     if request.method == "POST":
