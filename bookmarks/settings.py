@@ -63,6 +63,10 @@ internal_ips = [
     '127.0.0.1',
 ]
 
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
+
 ROOT_URLCONF = 'bookmarks.urls'
 
 TEMPLATES = [
