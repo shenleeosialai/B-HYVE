@@ -3,47 +3,60 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}{% endblock %}</title>
-    <link rel="icon" href="{% static 'images/favicon.ico' %}">
-    <link href="{% static 'css/base.css' %}" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" />
+    <link href="{% static 'css/base.css' %}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
-    <header id="header">
-        <span class="logo">Privet</span>
-        {% if request.user.is_authenticated %}
-        <nav>
-            <ul class="menu">
-                <li {% if section == "dashboard" %}class="selected" {% endif %}>
-                    <a href="{% url 'dashboard' %}">My dashboard</a>
-                </li>
-                <li {% if section == "images" %}class="selected" {% endif %}>
-                    <a href="{% url 'images:list' %}">Images</a>
-                </li>
-                <li {% if section == "people" %}class="selected" {% endif %}>
-                    <a href="{% url 'user_list' %}">People</a>
-                </li>
-
-            </ul>
-        </nav>
-        {% endif %}
-        <span class="user">
+    <header class="glass-header">
+        <div class="header-inner">
+            <a href="{% url 'dashboard' %}" class="logo">Privet<span class="dot">•</span></a>
             {% if request.user.is_authenticated %}
-            Hello {{ request.user.first_name|default:request.user.username }},
-            <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit"
-                    style="background:none; border:none; padding:0; color:#00f; text-decoration:underline; cursor:pointer;">
-                    Logout
-                </button>
-            </form>
-            {% else %}
-            <a href="{% url 'login' %}">Log-in</a>
+            <nav class="main-nav" id="mainMenu">
+                <ul>
+                    <li {% if section == "dashboard" %}class="selected" {% endif %}>
+                        <a href="{% url 'dashboard' %}" class="nav-pill">
+                            <span class="icon">✨</span> Dashboard
+                        </a>
+                    </li>
+                    <li {% if section == "images" %}class="selected" {% endif %}>
+                        <a href="{% url 'images:list' %}" class="nav-pill">
+                             Images
+                        </a>
+                    </li>
+                    <li {% if section == "people" %}class="selected" {% endif %}>
+                        <a href="{% url 'user_list' %}" class="nav-pill">
+                             People
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
             {% endif %}
-        </span>
+
+            <div class="nav-right">
+                {% if request.user.is_authenticated %}
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="glass-animated-btn">Logout</button>
+                </form>
+                {% else %}
+                <a href="{% url 'login' %}" class="glass-animated-btn">Login</a>
+                {% endif %}
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+
+        </div>
     </header>
+
 
     {% if messages %}
     <ul class="messages">
@@ -56,10 +69,12 @@
     </ul>
     {% endif %}
 
-    <main id="content">
+    <main id="content" style="padding-top: 7rem;">
         {% block content %}
         {% endblock %}
     </main>
+    <div id="overlay" class="overlay"></div>
+
     <script>
         function getCookie(name) {
             let cookieValue = null;
@@ -78,8 +93,8 @@
 
         const csrftoken = getCookie('csrftoken');
 
-        document.addEventListener('DOMContentLoaded', (event) => {
-            // Close messages when 'x' button is clicked
+        document.addEventListener('DOMContentLoaded', () => {
+            // Dismiss message banners
             document.querySelectorAll('.messages .close').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -87,11 +102,28 @@
                 });
             });
 
-            {% block domready %}
-            {% endblock %}
+            // Toggle mobile menu and glassy overlay
+            const hamburger = document.getElementById('hamburger');
+            const mainMenu = document.getElementById('mainMenu');
+            const overlay = document.getElementById('overlay');
+
+            if (hamburger && mainMenu && overlay) {
+                hamburger.addEventListener('click', () => {
+                    hamburger.classList.toggle('active');
+                    mainMenu.classList.toggle('show');
+                    overlay.classList.toggle('show');
+                });
+
+                overlay.addEventListener('click', () => {
+                    hamburger.classList.remove('active');
+                    mainMenu.classList.remove('show');
+                    overlay.classList.remove('show');
+                });
+            }
+
+            {% block domready %} {% endblock %}
         });
     </script>
-
 
 </body>
 
