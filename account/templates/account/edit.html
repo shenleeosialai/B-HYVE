@@ -1,16 +1,30 @@
 {% extends "base.html" %}
-
-{% block title %}Edit your account{% endblock %}
+{% load static %}
 
 {% block content %}
-    <h1>Edit your account</h1>
-        <p>You can edit your account using the following form:</p>
-    <form method="post" enctype="multipart/form-data">
-        {{ user_form.as_p }}
-        {{ profile_form.as_p }}
-        {% csrf_token %}
-        <p><input type="submit" value="Save changes"></p>
+<div class="login-overlay">
+  <div class="login-container">
+    <h2>Edit your account</h2>
+
+    {% if messages %}
+      <div class="form-messages">
+        {% for message in messages %}
+          <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="login-form">
+      {% csrf_token %}
+      {{ user_form.as_p }}
+      {{ profile_form.as_p }}
+      <p><input type="submit" value="Save changes"></p>
     </form>
+  </div>
+</div>
 {% endblock %}
+
 <!--i have added enctype="multipart/form-data" to the <form> HTML element
 to enable file uploads-->

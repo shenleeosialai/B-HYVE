@@ -20,30 +20,56 @@
                 <ul>
                     <li {% if section == "dashboard" %}class="selected" {% endif %}>
                         <a href="{% url 'dashboard' %}" class="nav-pill">
-                            <span class="icon">✨</span> Dashboard
+                            <span class="icon">✨</span> DASHBOARD
                         </a>
                     </li>
                     <li {% if section == "images" %}class="selected" {% endif %}>
                         <a href="{% url 'images:list' %}" class="nav-pill">
-                             Images
+                            EXPLORE
                         </a>
                     </li>
                     <li {% if section == "people" %}class="selected" {% endif %}>
                         <a href="{% url 'user_list' %}" class="nav-pill">
-                             People
+                            DISCOVER
                         </a>
                     </li>
-
                 </ul>
+                <div class="mobile-settings-links">
+                    <a href="{% url 'edit' %}" class="nav-pill">
+                        <i class="fas fa-user-edit icon"></i>
+                        <span>Edit Profile</span>
+                    </a>
+                    <a href="{% url 'password_change' %}" class="nav-pill">
+                        <i class="fas fa-key icon"></i>
+                        <span>Change Password</span>
+                    </a>
+                </div>
+
             </nav>
             {% endif %}
 
             <div class="nav-right">
                 {% if request.user.is_authenticated %}
+                <span class="username">Hi,{{ request.user.first_name|default:request.user.username }}</span>
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <button type="submit" class="glass-animated-btn">Logout</button>
                 </form>
+                <div class="settings-dropdown">
+                    <button class="settings-icon"><i class="fas fa-gear"></i></button>
+                    <div class="dropdown-menu">
+                        <a href="{% url 'edit' %}" class="nav-pill">
+                            <i class="fas fa-user-edit icon"></i>
+                            <span>Edit Profile</span>
+                        </a>
+                        <a href="{% url 'password_change' %}" class="nav-pill">
+                            <i class="fas fa-key icon"></i>
+                            <span>Change Password</span>
+                        </a>
+                    </div>
+                </div>
+
+
                 {% else %}
                 <a href="{% url 'login' %}" class="glass-animated-btn">Login</a>
                 {% endif %}
@@ -53,10 +79,8 @@
                     <span></span>
                 </div>
             </div>
-
         </div>
     </header>
-
 
     {% if messages %}
     <ul class="messages">
@@ -70,8 +94,7 @@
     {% endif %}
 
     <main id="content" style="padding-top: 7rem;">
-        {% block content %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </main>
     <div id="overlay" class="overlay"></div>
 
@@ -94,7 +117,6 @@
         const csrftoken = getCookie('csrftoken');
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Dismiss message banners
             document.querySelectorAll('.messages .close').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -102,7 +124,6 @@
                 });
             });
 
-            // Toggle mobile menu and glassy overlay
             const hamburger = document.getElementById('hamburger');
             const mainMenu = document.getElementById('mainMenu');
             const overlay = document.getElementById('overlay');
@@ -124,7 +145,6 @@
             {% block domready %} {% endblock %}
         });
     </script>
-
 </body>
 
 </html>

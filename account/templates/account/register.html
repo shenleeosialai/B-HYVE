@@ -1,13 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Create an account{% endblock %}
 
 {% block content %}
-    <h1>Create an account</h1>
+<div class="login-overlay">
+  <div class="login-container">
     <p>Please, sign up using the following form:</p>
-    <form method="post">
-        {{ user_form.as_p }}
-        {% csrf_token %}
-        <p><input type="submit" value="Create my account"></p>
+
+    <form method="post" class="login-form">
+      {% csrf_token %}
+      {{ user_form.as_p }}
+      <p><input type="submit" value="Create my account"></p>
     </form>
+  </div>
+</div>
 {% endblock %}
