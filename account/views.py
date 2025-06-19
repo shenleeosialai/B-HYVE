@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
@@ -85,6 +85,8 @@ def edit(request):
             user_form.save()
             profile_form.save()
             messages.success(request, "Profile updated " "successfully")
+            return redirect("user_list")
+
         else:
             messages.error(request, "Error updating your profile")
     else:
