@@ -2,26 +2,23 @@
 {% load thumbnail %}
 {% load static %}
 
-{% block title %}People{% endblock %}
+{% block title %}Discover{% endblock %}
 
 {% block content %}
-  <h1>People</h1>
-  <div id="people-list">
-    {% for user in users %}
-      <div class="user">
-        <a href="{{ user.get_absolute_url }}">
-          {% if user.profile.photo %}
-            <img src="{% thumbnail user.profile.photo 180x180 %}" alt="{{ user.get_full_name }}">
-          {% else %}
-            <img src="{% static 'img/default_profile.png' %}" width="180" height="180" alt="Default photo">
-          {% endif %}
-        </a>
-        <div class="info">
-          <a href="{{ user.get_absolute_url }}" class="title">
-            {{ user.get_full_name }}
-          </a>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
+<div id="people-list">
+  {% for user in users %}
+    <div class="user">
+      <a href="{{ user.get_absolute_url }}">
+        {% if user.profile.photo %}
+          <img src="{% thumbnail user.profile.photo 180x180 crop %}" alt="{{ user.get_full_name }}">
+        {% else %}
+          <img src="{% static 'img/default_profile.png' %}" width="120" height="120" alt="Default photo">
+        {% endif %}
+      </a>
+      <a href="{{ user.get_absolute_url }}" class="title">
+        {{ user.get_full_name }}
+      </a>
+    </div>
+  {% endfor %}
+</div>
 {% endblock %}
