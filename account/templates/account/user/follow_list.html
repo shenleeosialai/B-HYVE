@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load static %}
+{% load thumbnail %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+<style>
+  .profile-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    color: #fff;
+  }
+
+  .user-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .user-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.7rem;
+  }
+
+  .user-entry a {
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-weight: 500;
+  }
+
+  .user-entry img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .ajax-follow-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    padding: 0.4rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s ease;
+  }
+
+  .ajax-follow-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .pagination a {
+    color: #fff;
+    text-decoration: underline;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+  }
+
+  .modal-content {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    color: #fff;
+    position: relative;
+  }
+
+  .close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: white;
+  }
+  .follow-nav {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.follow-nav .btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 16px;
+  border-radius: 12px;
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+
+.follow-nav .btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+</style>
+
+<div class="profile-container">
+  <h2>{{ title }}</h2>
+  <div class="follow-nav">
+    <a href="{% url 'not_following_back' %}" class="btn">Not Following Back</a>
+  </div>
+  <ul class="user-list">
+    {% for person in people %}
+    <li class="user-entry" data-user-id="{{ person.id }}">
+      <a href="{% url 'user_detail' person.username %}">
+        {% if person.profile.photo %}
+          <img src="{% thumbnail person.profile.photo 40x40 crop='center' %}" alt="{{ person.username }}">
+        {% else %}
+          <img src="{% static 'img/default_profile.png' %}" width="40" height="40" alt="Default">
+        {% endif %}
+        {{ person.get_full_name }} (@{{ person.username }})
+      </a>
+      {% if request.user != person %}
+        <button class="ajax-follow-btn" data-id="{{ person.id }}"
+                data-action="{% if person in request.user.following.all %}unfollow{% else %}follow{% endif %}">
+          {% if person in request.user.following.all %}Unfollow{% else %}Follow{% endif %}
+        </button>
+      {% endif %}
+    </li>
+    {% empty %}
+    <li>No users to display.</li>
+    {% endfor %}
+  </ul>
+
+  {% if people.has_other_pages %}
+  <div class="pagination">
+    {% if people.has_previous %}
+      <a href="?page={{ people.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span>Page {{ people.number }} of {{ people.paginator.num_pages }}</span>
+    {% if people.has_next %}
+      <a href="?page={{ people.next_page_number }}">Next</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal -->
+<div id="followModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <div id="modal-body"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block domready %}
+// AJAX follow/unfollow
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+document.querySelectorAll('.ajax-follow-btn').forEach(button => {
+  button.addEventListener('click', function () {
+    const userId = this.dataset.id;
+    const action = this.dataset.action;
+
+    fetch("{% url 'user_follow' %}", {
+      method: "POST",
+      headers: { 'X-CSRFToken': csrftoken },
+      body: new URLSearchParams({ id: userId, action: action })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        this.dataset.action = action === 'follow' ? 'unfollow' : 'follow';
+        this.textContent = this.dataset.action.charAt(0).toUpperCase() + this.dataset.action.slice(1);
+      }
+    });
+  });
+});
+
+// Modal display
+function openFollowModal(type, username) {
+  fetch(`/user/${username}/${type}/`)
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("modal-body").innerHTML = html;
+      document.getElementById("followModal").style.display = "block";
+    });
+}
+
+document.querySelectorAll('.open-followers, .open-following').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const type = this.classList.contains('open-followers') ? 'followers' : 'following';
+    openFollowModal(type, this.dataset.username);
+  });
+});
+
+document.querySelector('.close-modal').onclick = function () {
+  document.getElementById("followModal").style.display = "none";
+};
+{% endblock %}

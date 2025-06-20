@@ -1,10 +1,11 @@
 from django.urls import path, include
-from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
     # previous login view
     # path('login/', views.user_login, name='login'),
+    # from django.contrib.auth import views as auth_views
+
 
     # path('login/', auth_views.LoginView.as_view(), name='login'),
     # path('logout/', auth_views.LogoutView.as_view(), name='logout'),
@@ -36,6 +37,12 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('edit/', views.edit, name='edit'),
     path('my-profile/', views.my_profile, name='my_profile'),
+    path('user/<username>/followers/', views.user_followers,
+         name='user_followers'),
+    path('user/<username>/following/', views.user_following,
+         name='user_following'),
+    path('not-following-back/', views.not_following_back,
+         name='not_following_back'),
     path('users/', views.user_list, name='user_list'),
     path('users/follow/', views.user_follow, name='user_follow'),
     path('users/<username>/', views.user_detail, name='user_detail'),

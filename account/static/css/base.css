@@ -869,6 +869,160 @@ a.follow {
 .user .title:hover {
   text-decoration: underline;
 }
+/* User profile */
+.profile-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4px;
+  background: #000000;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+/* Top bar */
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.username {
+  font-weight: bold;
+}
+
+/* Profile + Stats row */
+.profile-info-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Profile image */
+.profile-pic img {
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Stats */
+.profile-stats {
+  display: flex;
+  flex: 1;
+  gap: 2rem;
+  font-size: 1rem;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.profile-stats div {
+  text-align: center;
+  min-width: 80px;
+}
+
+/* Bio and Website */
+.profile-bio {
+  margin-top: 1rem;
+  line-height: 1.5;
+}
+
+.profile-bio a {
+  color: #66ccff;
+  text-decoration: none;
+}
+
+
+/* Buttons */
+.profile-buttons {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Image Grid */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 1rem;
+}
+
+.grid-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-stats {
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding-top: 1rem;
+  }
+
+  .profile-buttons {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+
+  .btn {
+    width: 70%;
+    text-align: center;
+    padding: 6px 12px; /* smaller height and width via padding */
+    font-size: 0.8rem;  /* optional: slightly smaller text */
+  }
+}
+/* following and followers */
+.user-list {
+  list-style: none;
+  padding: 0;
+}
+
+.user-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.user-list img {
+  border-radius: 50%;
+  object-fit: cover;
+}
 
 
 /* actions */
