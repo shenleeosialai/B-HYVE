@@ -13,6 +13,7 @@ from .models import Profile
 from .models import Contact
 from actions.utils import create_action
 from actions.models import Action
+from django.core.paginator import Paginator
 
 
 def user_login(request):
@@ -89,7 +90,7 @@ def edit(request):
             user_form.save()
             profile_form.save()
             messages.success(request, "Profile updated " "successfully")
-            return redirect("user_list")
+            return redirect("my_profile")
 
         else:
             messages.error(request, "Error updating your profile")
@@ -148,3 +149,56 @@ def user_follow(request):
         except User.DoesNotExist:
             return JsonResponse({"status": "error"})
     return JsonResponse({"status": "error"})
+
+
+@login_required
+def user_followers(request, username):
+    user = get_object_or_404(User, username=username, is_active=True)
+    followers = user.followers.all()  # This is a QuerySet of User instances
+
+    paginator = Paginator(followers, 10)  # Show 10 users per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'account/user/follow_list.html', {
+        'section': 'followers',
+        'title': f"{user.username}'s followers",
+        'people': page_obj
+    })
+
+
+@login_required
+def user_following(request, username):
+    user = get_object_or_404(User, username=username, is_active=True)
+    following = user.following.all()  # This is a QuerySet of User instances
+
+    paginator = Paginator(following, 10)  # Show 10 users per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'account/user/follow_list.html', {
+        'section': 'following',
+        'title': f"{user.username} is following",
+        'people': page_obj
+    })
+
+
+@login_required
+def not_following_back(request):
+    user = request.user
+    following = user.following.all()          # People I follow
+    followers = user.followers.all()          # People who follow me
+
+    # Users I follow who do not follow me back
+    non_mutual = following.exclude(id__in=followers.values_list('id',
+                                                                flat=True))
+
+    paginator = Paginator(non_mutual, 10)     # Add pagination
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'account/user/follow_list.html', {
+        'section': 'not_following_back',
+        'title': "You're following but not followed back",
+        'people': page_obj
+    })
