@@ -527,7 +527,7 @@ ol {
 
 
 #content {
-    padding: 30px 100px;
+    padding:20px;
 }
 
 /* forms */
@@ -803,38 +803,73 @@ a.follow {
 }
 
 /* users */
-#people-list img {
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    margin-bottom: 20px;
+.page-title {
+  text-align: center;
+  color: white;
+  font-size: 2rem;
+  margin: 2rem 0;
 }
 
-#people-list .user {
-    width: 180px;
-    float: left;
-    overflow: auto;
-    padding: 10px;
+#people-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+  gap: 24px;
+  padding: 0 16px 40px;
 }
 
-#people-list .info {
-    text-align: center;
+@media (min-width: 768px) {
+  #people-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-img.user-detail {
-    border-radius: 50%;
-    float: left;
+@media (min-width: 1200px) {
+  #people-list {
+    grid-template-columns: repeat(5, 1fr); /* 5 columns on desktops */
+  }
 }
 
-.profile-info {
-    float: left;
-    overflow: auto;
-    margin-right: 20px;
+.user {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(14px);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+  text-align: center;
+  padding: 15px;
 }
 
-.image-container {
-    margin-top: 40px;
+.user:hover {
+  transform: scale(1.03);
 }
+
+.user img {
+  width: 100%;
+  max-width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.user .title {
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: block;
+  margin-top: 5px;
+}
+
+.user .title:hover {
+  text-decoration: underline;
+}
+
 
 /* actions */
 .action {

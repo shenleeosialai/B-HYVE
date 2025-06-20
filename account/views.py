@@ -31,6 +31,11 @@ def user_login(request):
                     return HttpResponse("Disabled account")
             else:
                 return HttpResponse("Invalid login")
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    return redirect('my_profile')  # 🔁 redirect to new view
+
     else:
         form = LoginForm()
     return render(request, "account/login.html", {"form": form})
@@ -66,8 +71,7 @@ def register(request):
             # Create the user profile
             Profile.objects.create(user=new_user)
             create_action(new_user, "has created an account")
-            return render(request, "account/register_done.html",
-                          {"new_user": new_user})
+            return redirect("my_profile", {"new_user": new_user})
     else:
         user_form = UserRegistrationForm()
     return render(request, "account/register.html", {"user_form": user_form})
@@ -114,6 +118,14 @@ def user_detail(request, username):
     return render(
         request, "account/user/detail.html",
         {"section": "people", "user": user}
+    )
+
+
+@login_required
+def my_profile(request):
+    return render(
+        request, "account/user/detail.html",
+        {"section": "people", "user": request.user}
     )
 
 
