@@ -32,11 +32,6 @@ def user_login(request):
                     return HttpResponse("Disabled account")
             else:
                 return HttpResponse("Invalid login")
-            if user is not None:
-                if user.is_active:
-                    login(request, user)
-                    return redirect('my_profile')  # 🔁 redirect to new view
-
     else:
         form = LoginForm()
     return render(request, "account/login.html", {"form": form})
@@ -106,11 +101,34 @@ def edit(request):
 
 @login_required
 def user_list(request):
-    users = User.objects.filter(is_active=True)
-    return render(
-        request, "account/user/list.html",
-        {"section": "people", "users": users}
-    )
+    query = request.GET.get('q')
+    ajax = request.GET.get('ajax')
+    users = []
+    searched = False
+
+    if query is not None:
+        query = query.strip()
+        searched = True
+        if query:
+            try:
+                user = User.objects.get(username__iexact=query)
+                users = [user]
+            except User.DoesNotExist:
+                users = []
+        else:
+            users = []  # Empty input still counts as "searched"
+
+    if ajax:
+        return JsonResponse(
+            [{'username': u.username} for u in users],
+            safe=False
+        )
+
+    return render(request, 'account/user/list.html', {
+        'users': users,
+        'query': query,
+        'searched': searched,
+    })
 
 
 @login_required
