@@ -3,18 +3,20 @@
 <html lang="en">
 
 <head>
+    
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}{% endblock %}</title>
     <link rel="icon" href="{% static 'images/favicon.ico' %}" />
     <link href="{% static 'css/base.css' %}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 
 <body>
     <header class="glass-header">
         <div class="header-inner">
-            <a href="{% url 'dashboard' %}" class="logo">Privet<span class="dot">•</span></a>
+            <a href="{% url 'dashboard' %}" class="logo">B-Hyve<span class="dot">•</span></a>
             {% if request.user.is_authenticated %}
             <nav class="main-nav" id="mainMenu">
                 <ul>

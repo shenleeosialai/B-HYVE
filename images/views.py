@@ -7,10 +7,12 @@ from django.views.decorators.http import require_POST
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import ImageCreateForm
-from .models import Image
+from .models import Image, Comment
 from actions.utils import create_action
 from django.conf import settings
 import redis
+from django.db.models import Q
+from django.contrib.auth.models import User
 
 
 r = redis.Redis(
@@ -120,3 +122,39 @@ def image_ranking(request):
         "images/image/ranking.html",
         {"section": "images", "most_viewed": most_viewed},
     )
+
+
+@require_POST
+@login_required
+def image_comment(request):
+    image_id = request.POST.get('image_id')
+    text = request.POST.get('comment')
+
+    try:
+        image = Image.objects.get(id=image_id)
+        comment = Comment.objects.create(image=image, user=request.user,
+                                         text=text)
+        return JsonResponse({'status': 'ok', 'text': comment.text,
+                             'user': request.user.first_name})
+    except Image.DoesNotExist:
+        return JsonResponse({'status': 'error'})
+
+
+def image_list_view(request):
+    query = request.GET.get('q')
+    if query:
+        users = User.objects.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        )
+        images = Image.objects.filter(user__in=users).select_related('user')
+    else:
+        images = Image.objects.all()
+
+    context = {
+        'images': images,
+    }
+    if request.GET.get('images_only'):
+        return render(request, "images/image/list_images.html", context)
+    return render(request, "images/image/bookmarked.html", context)

@@ -1,41 +1,98 @@
 {% extends "base.html" %}
 
-{% block title %}Images bookmarked{% endblock %}
+{% block title %}Explore{% endblock %}
 
 {% block content %}
-  <h1>Images bookmarked</h1>
-  <div id="image-list">
-    {% include "images/image/list_images.html" %}
-  </div>
+<div class="search-bar-container">
+  <form method="get" action="{% url 'user_list' %}">
+    <input type="text" name="q" placeholder="search..." value="{{ query|default_if_none:'' }}">
+    <button type="submit">Search</button>
+  </form>
+
+  {% if searched %}
+  {% if users %}
+  <ul>
+    {% for user in users %}
+    <li>
+      <a href="{% url 'user_detail' user.username %}">
+        {{ user.username }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>User not found.</p>
+  {% endif %}
+  {% endif %}
+
+</div>
+
+<div id="image-list">
+  {% include "images/image/list_images.html" %}
+</div>
 {% endblock %}
 
+
+
 {% block domready %}
-  var page = 1;
-  var emptyPage = false;
-  var blockRequest = false;
+var page = 1;
+var emptyPage = false;
+var blockRequest = false;
 
-  window.addEventListener('scroll', function(e) {
-    var margin = document.body.clientHeight - window.innerHeight - 200;
-    if(window.pageYOffset > margin && !emptyPage && !blockRequest) {
-      blockRequest = true;
-      page += 1;
+window.addEventListener('scroll', function(e) {
+var margin = document.body.clientHeight - window.innerHeight - 200;
+if(window.pageYOffset > margin && !emptyPage && !blockRequest) {
+blockRequest = true;
+page += 1;
 
-      fetch('?images_only=1&page=' + page)
-      .then(response => response.text())
-      .then(html => {
-        if (html === '') {
-          emptyPage = true;
-        }
-        else {
-          var imageList = document.getElementById('image-list');
-          imageList.insertAdjacentHTML('beforeEnd', html);
-          blockRequest = false;
-        }
-      })
-    }
-  });
+fetch('?images_only=1&page=' + page)
+.then(response => response.text())
+.then(html => {
+if (html === '') {
+emptyPage = true;
+}
+else {
+var imageList = document.getElementById('image-list');
+imageList.insertAdjacentHTML('beforeEnd', html);
+blockRequest = false;
+}
+})
+}
+});
 
-  // Launch scroll event
-  const scrollEvent = new Event('scroll');
-  window.dispatchEvent(scrollEvent);
+// Launch scroll event
+const scrollEvent = new Event('scroll');
+window.dispatchEvent(scrollEvent);
+const searchInput = document.getElementById('search-input');
+const resultsContainer = document.getElementById('search-results');
+
+// Live user search
+searchInput.addEventListener('input', function () {
+const query = this.value.trim();
+if (!query) {
+resultsContainer.innerHTML = '';
+return;
+}
+
+fetch(`/users/?q=${encodeURIComponent(query)}&ajax=1`)
+.then(res => res.json())
+.then(data => {
+resultsContainer.innerHTML = '';
+if (data.length > 0) {
+data.forEach(user => {
+const li = document.createElement('li');
+li.innerHTML = `<a href="/users/${user.username}/">${user.username}</a>`;
+resultsContainer.appendChild(li);
+});
+} else {
+resultsContainer.innerHTML = '<li>User not found.</li>';
+}
+});
+});
+
+// Prevent default form submission
+document.getElementById('live-search-form').addEventListener('submit', function (e) {
+e.preventDefault();
+});
+
 {% endblock %}

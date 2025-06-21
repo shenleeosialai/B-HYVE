@@ -1,83 +1,114 @@
 {% extends "base.html" %}
+{% load thumbnail static %}
 
 {% block title %}{{ image.title }}{% endblock %}
 
 {% block content %}
-  <h1>{{ image.title }}</h1>
-  {% load thumbnail %}
-  <a href="{{ image.image.url }}">
-    <img src="{% thumbnail image.image 300x0 %}" class="image-detail">
-  </a>
-  {% with total_likes=image.users_like.count users_like=image.users_like.all %}
-    <div class="image-info">
-      <div>
-        <span class="count">
-          <span class="total">{{ total_likes }}</span>
-          like{{ total_likes|pluralize }}
-        </span>
-        <a href="#" data-id="{{ image.id }}" data-action="{% if request.user in users_like %}un{% endif %}like"
-    class="like button">
-          {% if request.user not in users_like %}
-            Like
-          {% else %}
-            Unlike
-          {% endif %}
-        </a>
-      </div>
-      {{ image.description|linebreaks }}
+<div class="insta-post">
+
+  <!-- Header -->
+  <div class="insta-header">
+    <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
+    <div class="post-info">
+      <strong>{{ image.user.username }}</strong>
     </div>
-    <div class="image-likes">
-      {% for user in users_like %}
-        <div>
-          {% if user.profile.photo %}
-            <img src="{{ user.profile.photo.url }}">
-          {% endif %}
-          <p>{{ user.first_name }}</p>
-        </div>
-      {% empty %}
-        Nobody likes this image yet.
-      {% endfor %}
-    </div>
-  {% endwith %}
+  </div>
+
+  <!-- Image -->
+  <div class="insta-image-wrapper">
+    <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+  </div>
+
+  <!-- Action bar -->
+  <div class="insta-actions">
+    <a href="#" class="like-btn" data-id="{{ image.id }}" data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
+      <i class="fa{% if request.user in image.users_like.all %}s{% else %}r{% endif %} fa-heart"></i>
+    </a>
+    <i class="far fa-comment"></i>
+    <i class="far fa-paper-plane"></i>
+  </div>
+
+  <!-- Likes -->
+  <div class="likes">
+    Liked by <strong>{{ image.users_like.first.username }}</strong> and <strong>{{ image.users_like.count|add:"-1" }} others</strong>
+  </div>
+
+  <!-- Caption -->
+  <div class="caption">
+    <strong>{{ image.user.username }}</strong> {{ image.description }}
+  </div>
+
+  <!-- Comments -->
+  <div class="comments" id="comments-list">
+    {% for comment in image.comments.all %}
+      <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
+    {% endfor %}
+  </div>
+
+  <!-- Add comment -->
+  <div class="add-comment">
+    <form id="comment-form" data-id="{{ image.id }}">
+      {% csrf_token %}
+      <input type="text" name="comment" placeholder="Add a comment..." required>
+      <button type="submit">Post</button>
+    </form>
+  </div>
+
+  <!-- Timestamp -->
+  <div class="timestamp">
+    {{ image.created|date:"F d, Y" }}
+  </div>
+</div>
 {% endblock %}
 
 {% block domready %}
-  const url = '{% url "images:like" %}';
-  var options = {
-    method: 'POST',
-    headers: {'X-CSRFToken': csrftoken},
-    mode: 'same-origin'
-  }
+const url = '{% url "images:like" %}';
+const commentUrl = '{% url "images:comment" %}';
+const options = {
+  method: 'POST',
+  headers: { 'X-CSRFToken': csrftoken },
+  mode: 'same-origin'
+};
 
-  document.querySelector('a.like')
-          .addEventListener('click', function(e){
-    e.preventDefault();
-    var likeButton = this;
+// Like toggle
+document.querySelector('.like-btn').addEventListener('click', function (e) {
+  e.preventDefault();
+  const btn = this;
+  const icon = btn.querySelector('i');
+  const formData = new FormData();
+  formData.append('id', btn.dataset.id);
+  formData.append('action', btn.dataset.action);
+  options.body = formData;
 
-    // add request body
-    var formData = new FormData();
-    formData.append('id', likeButton.dataset.id);
-    formData.append('action', likeButton.dataset.action);
-    options['body'] = formData;
-
-    // send HTTP request
-    fetch(url, options)
-    .then(response => response.json())
+  fetch(url, options)
+    .then(res => res.json())
     .then(data => {
-      if (data['status'] === 'ok')
-      {
-        var previousAction = likeButton.dataset.action;
-
-        // toggle button text and data-action
-        var action = previousAction === 'like' ? 'unlike' : 'like';
-        likeButton.dataset.action = action;
-        likeButton.innerHTML = action;
-
-        // update like count
-        var likeCount = document.querySelector('span.count .total');
-        var totalLikes = parseInt(likeCount.innerHTML);
-        likeCount.innerHTML = previousAction === 'like' ? totalLikes + 1 : totalLikes - 1;
+      if (data.status === 'ok') {
+        btn.dataset.action = btn.dataset.action === 'like' ? 'unlike' : 'like';
+        icon.classList.toggle('fas');
+        icon.classList.toggle('far');
       }
-    })
-  });
+    });
+});
+
+// Comment submit
+document.getElementById('comment-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const form = this;
+  const commentInput = form.querySelector('input[name="comment"]');
+  const formData = new FormData(form);
+  formData.append('image_id', form.dataset.id);
+  options.body = formData;
+
+  fetch(commentUrl, options)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        const newComment = document.createElement('p');
+        newComment.innerHTML = `<strong>${data.user}</strong> ${data.text}`;
+        document.getElementById('comments-list').prepend(newComment);
+        commentInput.value = '';
+      }
+    });
+});
 {% endblock %}
