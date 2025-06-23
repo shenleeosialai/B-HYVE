@@ -1,12 +1,268 @@
 {% extends "base.html" %}
+{% load thumbnail static %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
-  <h1>Dashboard</h1>
-  {% with total_images_created=request.user.images_created.count %}
-    <p>Welcome to your dashboard. You have bookmarked {{ total_images_created }} image{{ total_images_created|pluralize }}.</p>
-  {% endwith %}
-  <p>Drag the following button to your bookmarks toolbar to bookmark images from other websites → <a href="javascript:{% include "bookmarklet_launcher.js" %}" class="button">Bookmark it</a></p>
-  <p>You can also <a href="{% url "edit" %}">edit your profile</a> or <a href="{% url "password_change" %}">change your password</a>.</p>
+<style>
+  .fade-in {
+    animation: fadeIn 0.6s ease forwards;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .suggested-label {
+    background: rgba(255, 255, 255, 0.1);
+    color: #aaa;
+    font-size: 0.75em;
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin-left: 6px;
+  }
+
+  .follow-btn {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    font-size: 0.75em;
+    padding: 2px 8px;
+    margin-left: 5px;
+    cursor: pointer;
+    color: #ccc;
+  }
+
+  .follow-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+</style>
+
+<div id="post-container">
+  {% for image in page_obj %}
+  <div class="insta-post fade-in">
+    <!-- Header -->
+    <div class="insta-header">
+      <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
+      <div class="post-info">
+        <strong>
+          <a href="{% url 'user_detail' image.user.username %}" class="username-link">
+          {{ image.user.username }}
+        </a>
+          {% if image.user != request.user %}
+          {% if not image.is_following %}
+          <span class="suggested-label">Suggested</span>
+          <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="follow">Follow</button>
+          {% else %}
+          <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="unfollow">Unfollow</button>
+          {% endif %}
+          {% endif %}
+        </strong>
+      </div>
+    </div>
+
+    <!-- Image -->
+    <div class="insta-image-wrapper">
+      <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+    </div>
+
+    <!-- Action bar -->
+    <div class="insta-actions">
+      <a href="#" class="like-btn" data-id="{{ image.id }}"
+        data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
+        <i class="fa{% if request.user in image.users_like.all %}s{% else %}r{% endif %} fa-heart"></i>
+      </a>
+      <i class="far fa-comment"></i>
+      <i class="far fa-paper-plane"></i>
+    </div>
+
+    <!-- Likes -->
+    <div class="likes">
+      {% if image.users_like.count > 0 %}
+      Liked by <strong>{{ image.users_like.first.username }}</strong> and <strong>{{ image.users_like.count|add:"-1" }}
+        others</strong>
+      {% else %}
+      No likes yet
+      {% endif %}
+    </div>
+
+    <!-- Caption -->
+    <div class="caption">
+      <strong>{{ image.user.username }}</strong> {{ image.description }}
+    </div>
+
+    <!-- Comments -->
+    <div class="comments" id="comments-list-{{ image.id }}">
+      {% for comment in image.comments.all %}
+      <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
+      {% endfor %}
+    </div>
+
+    <!-- Add comment -->
+    <div class="add-comment">
+      <form class="comment-form" data-id="{{ image.id }}">
+        {% csrf_token %}
+        <input type="text" name="comment" placeholder="Add a comment..." required>
+        <button type="submit">Post</button>
+      </form>
+    </div>
+
+    <!-- Timestamp -->
+    <div class="timestamp">
+      {{ image.created|date:"F d, Y" }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Trigger + End message -->
+<div id="scroll-trigger" style="height: 40px;"></div>
+<div id="end-message" style="display: none; text-align: center; margin: 1rem 0; color: #aaaaaa;">You've viewed all posts
+</div>
+{% endblock %}
+
+{% block domready %}
+const likeUrl = '{% url "images:like" %}';
+const commentUrl = '{% url "images:comment" %}';
+const followUrl = '{% url "user_follow" %}';
+
+const options = {
+method: 'POST',
+headers: { 'X-CSRFToken': csrftoken },
+mode: 'same-origin'
+};
+
+function bindEvents() {
+// Likes
+document.querySelectorAll('.like-btn').forEach(btn => {
+btn.onclick = function (e) {
+e.preventDefault();
+const icon = this.querySelector('i');
+const formData = new FormData();
+formData.append('id', this.dataset.id);
+formData.append('action', this.dataset.action);
+options.body = formData;
+
+fetch(likeUrl, options)
+.then(res => res.json())
+.then(data => {
+if (data.status === 'ok') {
+this.dataset.action = this.dataset.action === 'like' ? 'unlike' : 'like';
+icon.classList.toggle('fas');
+icon.classList.toggle('far');
+}
+});
+};
+});
+
+// Comments
+document.querySelectorAll('.comment-form').forEach(form => {
+form.onsubmit = function (e) {
+e.preventDefault();
+const commentInput = this.querySelector('input[name="comment"]');
+const imageId = this.dataset.id;
+const formData = new FormData(this);
+formData.append('image_id', imageId);
+options.body = formData;
+
+fetch(commentUrl, options)
+.then(res => res.json())
+.then(data => {
+if (data.status === 'ok') {
+const newComment = document.createElement('p');
+newComment.innerHTML = `<strong>${data.user}</strong> ${data.text}`;
+document.getElementById(`comments-list-${imageId}`).prepend(newComment);
+commentInput.value = '';
+}
+});
+};
+});
+
+// Follow/Unfollow
+document.querySelectorAll('.follow-btn').forEach(btn => {
+btn.onclick = function (e) {
+e.preventDefault();
+const userId = this.dataset.userId;
+const action = this.dataset.action;
+const formData = new FormData();
+formData.append('id', userId);
+formData.append('action', action);
+
+fetch(followUrl, {
+method: 'POST',
+headers: { 'X-CSRFToken': csrftoken },
+body: formData
+})
+.then(res => res.json())
+.then(data => {
+if (data.status === 'ok') {
+if (action === 'follow') {
+this.textContent = 'Unfollow';
+this.dataset.action = 'unfollow';
+} else {
+this.textContent = 'Follow';
+this.dataset.action = 'follow';
+}
+}
+});
+};
+});
+}
+
+bindEvents();
+
+// Infinite Scroll
+let page = 2;
+let loading = false;
+let hasMore = true;
+let followed = '1';
+
+const scrollTrigger = document.getElementById('scroll-trigger');
+const postContainer = document.getElementById('post-container');
+const endMessage = document.getElementById('end-message');
+
+const observer = new IntersectionObserver((entries) => {
+if (entries[0].isIntersecting && !loading && hasMore) {
+loading = true;
+fetch(`?page=${page}&followed=${followed}`, {
+headers: { 'X-Requested-With': 'XMLHttpRequest' }
+})
+.then(res => res.json())
+.then(data => {
+if (data.html.trim()) {
+const tempDiv = document.createElement('div');
+tempDiv.innerHTML = data.html;
+tempDiv.querySelectorAll('.insta-post').forEach(post => {
+post.classList.add('fade-in');
+postContainer.appendChild(post);
+});
+bindEvents();
+page += 1;
+followed = data.next_followed;
+hasMore = data.has_more;
+loading = false;
+
+if (!hasMore && followed === '0') {
+endMessage.style.display = 'block';
+observer.unobserve(scrollTrigger);
+}
+} else {
+hasMore = false;
+endMessage.style.display = 'block';
+observer.unobserve(scrollTrigger);
+}
+});
+}
+}, {
+root: null,
+threshold: 0.5,
+rootMargin: '0px'
+});
+
+observer.observe(scrollTrigger);
 {% endblock %}

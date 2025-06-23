@@ -2,11 +2,86 @@
 
 <div class="grid-container">
   {% for image in images %}
-    <div class="grid-item">
-      <a href="{{ image.get_absolute_url }}">
-        {% thumbnail image.image 400x400 crop="center" as im %}
-          <img src="{{ im.url }}" alt="{{ image.title }}">
-      </a>
-    </div>
+  <div class="grid-item">
+    <a href="{{ image.get_absolute_url }}">
+      {% thumbnail image.image 400x400 crop="center" as im %}
+      <img src="{{ im.url }}" alt="{{ image.title }}">
+    </a>
+  </div>
   {% endfor %}
 </div>
+
+{% for image in page_obj %}
+<div class="insta-post fade-in">
+  <!-- Header -->
+  <div class="insta-header">
+    <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
+    <div class="post-info">
+      <strong>
+        <a href="{% url 'user_detail' image.user.username %}" class="username-link">
+          {{ image.user.username }}
+        </a>
+        {% if image.user != request.user %}
+        {% if not image.is_following %}
+        <span class="suggested-label">Suggested</span>
+        <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="follow">Follow</button>
+        {% else %}
+        <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="unfollow">Unfollow</button>
+        {% endif %}
+        {% endif %}
+      </strong>
+    </div>
+  </div>
+
+  <!-- Image -->
+  <div class="insta-image-wrapper">
+    <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+  </div>
+
+  <!-- Action bar -->
+  <div class="insta-actions">
+    <a href="#" class="like-btn" data-id="{{ image.id }}"
+      data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
+      <i class="fa{% if request.user in image.users_like.all %}s{% else %}r{% endif %} fa-heart"></i>
+    </a>
+    <i class="far fa-comment"></i>
+    <i class="far fa-paper-plane"></i>
+  </div>
+
+  <!-- Likes -->
+  <div class="likes">
+    {% if image.users_like.count > 0 %}
+    Liked by <strong>{{ image.users_like.first.username }}</strong> and <strong>{{ image.users_like.count|add:"-1" }}
+      others</strong>
+    {% else %}
+    No likes yet
+    {% endif %}
+  </div>
+
+  <!-- Caption -->
+  <div class="caption">
+    <strong>{{ image.user.username }}</strong> {{ image.description }}
+  </div>
+
+  <!-- Comments -->
+  <div class="comments" id="comments-list-{{ image.id }}">
+    {% for comment in image.comments.all %}
+    <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
+    {% endfor %}
+  </div>
+
+  <!-- Add comment -->
+  <div class="add-comment">
+    <form class="comment-form" data-id="{{ image.id }}">
+      {% csrf_token %}
+      <input type="text" name="comment" placeholder="Add a comment..." required>
+      <button type="submit">Post</button>
+    </form>
+  </div>
+
+  <!-- Timestamp -->
+  <div class="timestamp">
+    {{ image.created|date:"F d, Y" }}
+  </div>
+</div>
+{% endfor %}

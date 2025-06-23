@@ -7,13 +7,16 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from .forms import LoginForm, UserRegistrationForm, \
-    UserEditForm, ProfileEditForm
+from .forms import LoginForm, UserRegistrationForm, UserEditForm, \
+    ProfileEditForm
 from .models import Profile
 from .models import Contact
 from actions.utils import create_action
 from actions.models import Action
 from django.core.paginator import Paginator
+from images.models import Image
+from django.template.loader import render_to_string
+from django.db.models import Case, When, BooleanField
 
 
 def user_login(request):
@@ -49,8 +52,75 @@ def dashboard(request):
         "target"
     )[:10]
     return render(
-        request, "account/dashboard.html",
-        {"section": "dashboard", "actions": actions}
+        request, "account/dashboard.html", {"section": "dashboard",
+                                            "actions": actions}
+    )
+
+
+@login_required
+def home(request):
+    user = request.user
+    page = int(request.GET.get("page", 1))
+    show_followed = request.GET.get("followed", "1") == "1"
+
+    followed_users = list(user.following.values_list("id", flat=True))
+
+    # Query depending on followed/others
+    if show_followed:
+        images = Image.objects.filter(user__in=followed_users)
+    else:
+        images = Image.objects.exclude(user=user).exclude(user__in=followed_users)
+
+    # Annotate whether current user is following the image's author
+    images = images.annotate(
+        is_following=Case(
+            When(user__in=followed_users, then=True),
+            default=False,
+            output_field=BooleanField()
+        )
+    ).order_by("-created")
+
+    paginator = Paginator(images, 5)
+    page_obj = paginator.get_page(page)
+
+    # Determine if we should switch from followed to others
+    switch_to_others = (
+        show_followed and not page_obj.has_next() and page_obj.object_list
+    )
+
+    # AJAX infinite scroll
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        if switch_to_others:
+            # Load first page of non-followed users
+            other_images = Image.objects.exclude(user=user).exclude(user__in=followed_users)
+            other_images = other_images.annotate(
+                is_following=Case(
+                    When(user__in=followed_users, then=True),
+                    default=False,
+                    output_field=BooleanField()
+                )
+            ).order_by("-created")
+
+            paginator = Paginator(other_images, 5)
+            page_obj = paginator.get_page(1)
+            show_followed = False  # update flag for frontend
+
+        html = render_to_string(
+            "images/image/list_images.html",
+            {"page_obj": page_obj},
+            request=request
+        )
+        return JsonResponse({
+            "html": html,
+            "has_more": page_obj.has_next(),
+            "next_followed": "1" if show_followed else "0"
+        })
+
+    # Full page render
+    return render(
+        request,
+        "account/dashboard.html",
+        {"page_obj": page_obj}
     )
 
 
@@ -78,8 +148,7 @@ def edit(request):
     if request.method == "POST":
         user_form = UserEditForm(instance=request.user, data=request.POST)
         profile_form = ProfileEditForm(
-            instance=request.user.profile, data=request.POST,
-            files=request.FILES
+            instance=request.user.profile, data=request.POST, files=request.FILES
         )
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
@@ -101,8 +170,8 @@ def edit(request):
 
 @login_required
 def user_list(request):
-    query = request.GET.get('q')
-    ajax = request.GET.get('ajax')
+    query = request.GET.get("q")
+    ajax = request.GET.get("ajax")
     users = []
     searched = False
 
@@ -119,32 +188,31 @@ def user_list(request):
             users = []  # Empty input still counts as "searched"
 
     if ajax:
-        return JsonResponse(
-            [{'username': u.username} for u in users],
-            safe=False
-        )
+        return JsonResponse([{"username": u.username} for u in users], safe=False)
 
-    return render(request, 'account/user/list.html', {
-        'users': users,
-        'query': query,
-        'searched': searched,
-    })
+    return render(
+        request,
+        "account/user/list.html",
+        {
+            "users": users,
+            "query": query,
+            "searched": searched,
+        },
+    )
 
 
 @login_required
 def user_detail(request, username):
     user = get_object_or_404(User, username=username, is_active=True)
     return render(
-        request, "account/user/detail.html",
-        {"section": "people", "user": user}
+        request, "account/user/detail.html", {"section": "people", "user": user}
     )
 
 
 @login_required
 def my_profile(request):
     return render(
-        request, "account/user/detail.html",
-        {"section": "people", "user": request.user}
+        request, "account/user/detail.html", {"section": "people", "user": request.user}
     )
 
 
@@ -157,12 +225,10 @@ def user_follow(request):
         try:
             user = User.objects.get(id=user_id)
             if action == "follow":
-                Contact.objects.get_or_create(user_from=request.user,
-                                              user_to=user)
+                Contact.objects.get_or_create(user_from=request.user, user_to=user)
                 create_action(request.user, "is following", user)
             else:
-                Contact.objects.filter(user_from=request.user,
-                                       user_to=user).delete()
+                Contact.objects.filter(user_from=request.user, user_to=user).delete()
             return JsonResponse({"status": "ok"})
         except User.DoesNotExist:
             return JsonResponse({"status": "error"})
@@ -175,14 +241,18 @@ def user_followers(request, username):
     followers = user.followers.all()  # This is a QuerySet of User instances
 
     paginator = Paginator(followers, 10)  # Show 10 users per page
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'account/user/follow_list.html', {
-        'section': 'followers',
-        'title': f"{user.username}'s followers",
-        'people': page_obj
-    })
+    return render(
+        request,
+        "account/user/follow_list.html",
+        {
+            "section": "followers",
+            "title": f"{user.username}'s followers",
+            "people": page_obj,
+        },
+    )
 
 
 @login_required
@@ -191,32 +261,39 @@ def user_following(request, username):
     following = user.following.all()  # This is a QuerySet of User instances
 
     paginator = Paginator(following, 10)  # Show 10 users per page
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'account/user/follow_list.html', {
-        'section': 'following',
-        'title': f"{user.username} is following",
-        'people': page_obj
-    })
+    return render(
+        request,
+        "account/user/follow_list.html",
+        {
+            "section": "following",
+            "title": f"{user.username} is following",
+            "people": page_obj,
+        },
+    )
 
 
 @login_required
 def not_following_back(request):
     user = request.user
-    following = user.following.all()          # People I follow
-    followers = user.followers.all()          # People who follow me
+    following = user.following.all()  # People I follow
+    followers = user.followers.all()  # People who follow me
 
     # Users I follow who do not follow me back
-    non_mutual = following.exclude(id__in=followers.values_list('id',
-                                                                flat=True))
+    non_mutual = following.exclude(id__in=followers.values_list("id", flat=True))
 
-    paginator = Paginator(non_mutual, 10)     # Add pagination
-    page_number = request.GET.get('page')
+    paginator = Paginator(non_mutual, 10)  # Add pagination
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'account/user/follow_list.html', {
-        'section': 'not_following_back',
-        'title': "You're following but not followed back",
-        'people': page_obj
-    })
+    return render(
+        request,
+        "account/user/follow_list.html",
+        {
+            "section": "not_following_back",
+            "title": "You're following but not followed back",
+            "people": page_obj,
+        },
+    )

@@ -15,13 +15,29 @@
   </div>
 
   <!-- Image -->
-  <div class="insta-image-wrapper">
+  {% widthratio image.image.width 4 1 as w_ratio %}
+  {% widthratio image.image.height 5 1 as h_ratio %}
+
+  {% if w_ratio == h_ratio %}
+  {% with "default-ratio" as extra_class %}
+  <div class="insta-image-wrapper {{ extra_class }}">
     <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
   </div>
+  {% endwith %}
+  {% else %}
+  {% with "adaptive-ratio" as extra_class %}
+  <div class="insta-image-wrapper {{ extra_class }}">
+    <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+  </div>
+  {% endwith %}
+  {% endif %}
+
+
 
   <!-- Action bar -->
   <div class="insta-actions">
-    <a href="#" class="like-btn" data-id="{{ image.id }}" data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
+    <a href="#" class="like-btn" data-id="{{ image.id }}"
+      data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
       <i class="fa{% if request.user in image.users_like.all %}s{% else %}r{% endif %} fa-heart"></i>
     </a>
     <i class="far fa-comment"></i>
@@ -30,7 +46,8 @@
 
   <!-- Likes -->
   <div class="likes">
-    Liked by <strong>{{ image.users_like.first.username }}</strong> and <strong>{{ image.users_like.count|add:"-1" }} others</strong>
+    Liked by <strong>{{ image.users_like.first.username }}</strong> and <strong>{{ image.users_like.count|add:"-1" }}
+      others</strong>
   </div>
 
   <!-- Caption -->
@@ -41,7 +58,7 @@
   <!-- Comments -->
   <div class="comments" id="comments-list">
     {% for comment in image.comments.all %}
-      <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
+    <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
     {% endfor %}
   </div>
 
@@ -65,50 +82,50 @@
 const url = '{% url "images:like" %}';
 const commentUrl = '{% url "images:comment" %}';
 const options = {
-  method: 'POST',
-  headers: { 'X-CSRFToken': csrftoken },
-  mode: 'same-origin'
+method: 'POST',
+headers: { 'X-CSRFToken': csrftoken },
+mode: 'same-origin'
 };
 
 // Like toggle
 document.querySelector('.like-btn').addEventListener('click', function (e) {
-  e.preventDefault();
-  const btn = this;
-  const icon = btn.querySelector('i');
-  const formData = new FormData();
-  formData.append('id', btn.dataset.id);
-  formData.append('action', btn.dataset.action);
-  options.body = formData;
+e.preventDefault();
+const btn = this;
+const icon = btn.querySelector('i');
+const formData = new FormData();
+formData.append('id', btn.dataset.id);
+formData.append('action', btn.dataset.action);
+options.body = formData;
 
-  fetch(url, options)
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'ok') {
-        btn.dataset.action = btn.dataset.action === 'like' ? 'unlike' : 'like';
-        icon.classList.toggle('fas');
-        icon.classList.toggle('far');
-      }
-    });
+fetch(url, options)
+.then(res => res.json())
+.then(data => {
+if (data.status === 'ok') {
+btn.dataset.action = btn.dataset.action === 'like' ? 'unlike' : 'like';
+icon.classList.toggle('fas');
+icon.classList.toggle('far');
+}
+});
 });
 
 // Comment submit
 document.getElementById('comment-form').addEventListener('submit', function (e) {
-  e.preventDefault();
-  const form = this;
-  const commentInput = form.querySelector('input[name="comment"]');
-  const formData = new FormData(form);
-  formData.append('image_id', form.dataset.id);
-  options.body = formData;
+e.preventDefault();
+const form = this;
+const commentInput = form.querySelector('input[name="comment"]');
+const formData = new FormData(form);
+formData.append('image_id', form.dataset.id);
+options.body = formData;
 
-  fetch(commentUrl, options)
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'ok') {
-        const newComment = document.createElement('p');
-        newComment.innerHTML = `<strong>${data.user}</strong> ${data.text}`;
-        document.getElementById('comments-list').prepend(newComment);
-        commentInput.value = '';
-      }
-    });
+fetch(commentUrl, options)
+.then(res => res.json())
+.then(data => {
+if (data.status === 'ok') {
+const newComment = document.createElement('p');
+newComment.innerHTML = `<strong>${data.user}</strong> ${data.text}`;
+document.getElementById('comments-list').prepend(newComment);
+commentInput.value = '';
+}
+});
 });
 {% endblock %}
