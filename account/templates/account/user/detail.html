@@ -13,8 +13,9 @@
     <div class="username">@{{ user.username }}</div>
   </div>
 
-  <!-- Profile Picture + Stats -->
-  <div class="profile-info-row">
+<!-- Profile Picture + Stats -->
+<div class="profile-info-row">
+  <div class="profile-pic-section">
     <div class="profile-pic">
       {% if user.profile.photo %}
         <img src="{% thumbnail user.profile.photo 120x120 crop='center' %}" alt="{{ user.get_full_name }}">
@@ -22,60 +23,64 @@
         <img src="{% static 'img/default_profile.png' %}" width="120" height="120" alt="Default profile photo">
       {% endif %}
     </div>
-    <div class="profile-stats">
-  <div><strong>{{ user.images_created.count }}</strong><br>Posts</div>
-  <div>
-    <a href="{% url 'user_followers' user.username %}">
-      <strong>{{ user.followers.count }}</strong><br>Followers
-    </a>
+    <!-- Username below image (mobile only) -->
+    <div class="mobile-username">@{{ user.username }}</div>
   </div>
-  <div>
-    <a href="{% url 'user_following' user.username %}">
-      <strong>{{ user.following.count }}</strong><br>Following
-    </a>
+
+  <div class="profile-stats">
+    <div><strong>{{ user.images_created.count }}</strong><br>Posts</div>
+    <div>
+      <a href="{% url 'user_followers' user.username %}">
+        <strong>{{ user.followers.count }}</strong><br>Followers
+      </a>
+    </div>
+    <div>
+      <a href="{% url 'user_following' user.username %}">
+        <strong>{{ user.following.count }}</strong><br>Following
+      </a>
+    </div>
   </div>
 </div>
 
-  </div>
 
   <!-- Bio -->
   <div class="profile-bio">
-     <!-- <strong>{{ user.get_full_name }}</strong><br> -->
+    <!-- <strong>{{ user.get_full_name }}</strong><br> -->
     <p>{{ user.profile.bio|default:"" }}</p>
     {% if user.profile.website %}
-      <a href="{{ user.profile.website }}" target="_blank">{{ user.profile.website }}</a>
+    <a href="{{ user.profile.website }}" target="_blank">{{ user.profile.website }}</a>
     {% endif %}
   </div>
 
   <!-- Buttons -->
-{% if request.user == user %}
+  {% if request.user == user %}
   <div class="profile-buttons">
     <a href="{% url 'edit' %}" class="btn">Edit Profile</a>
     <a href="#" class="btn" id="share-profile">Share Profile</a>
   </div>
-{% else %}
+  {% else %}
   <div class="profile-buttons">
     <a href="#" data-id="{{ user.id }}" data-action="{% if request.user in user.followers.all %}un{% endif %}follow"
-       class="follow btn">
+      class="follow btn">
       {% if request.user not in user.followers.all %}
-        Follow
+      Follow
       {% else %}
-        Unfollow
+      Unfollow
       {% endif %}
     </a>
   </div>
-{% endif %}
+  {% endif %}
 
   <!-- Image Grid -->
   <div class="image-grid">
     {% for image in user.images_created.all %}
-      <div class="grid-item">
-        <a href="{{ image.get_absolute_url }}">
-          <img src="{% thumbnail image.image 300x300 crop='center' %}" alt="{{ image.title }}">
-        </a>
-      </div>
+    <div class="grid-item">
+      <a href="{{ image.get_absolute_url }}">
+        <img src="{% thumbnail image.image 300x300 crop='center' %}" alt="{{ image.title }}">
+      </a>
+    </div>
     {% empty %}
-      <p>No posts yet.</p>
+    <p>No posts yet.</p>
     {% endfor %}
   </div>
 </div>
@@ -85,58 +90,58 @@
 const url = '{% url "user_follow" %}';
 const followButton = document.querySelector('a.follow');
 if (followButton) {
-  const options = {
-    method: 'POST',
-    headers: {'X-CSRFToken': csrftoken},
-    mode: 'same-origin'
-  };
+const options = {
+method: 'POST',
+headers: {'X-CSRFToken': csrftoken},
+mode: 'same-origin'
+};
 
-  followButton.addEventListener('click', function(e) {
-    e.preventDefault();
-    const action = followButton.dataset.action;
-    const formData = new FormData();
-    formData.append('id', followButton.dataset.id);
-    formData.append('action', action);
-    options.body = formData;
+followButton.addEventListener('click', function(e) {
+e.preventDefault();
+const action = followButton.dataset.action;
+const formData = new FormData();
+formData.append('id', followButton.dataset.id);
+formData.append('action', action);
+options.body = formData;
 
-    fetch(url, options)
-      .then(response => response.json())
-      .then(data => {
-        if (data['status'] === 'ok') {
-          const newAction = action === 'follow' ? 'unfollow' : 'follow';
-          followButton.dataset.action = newAction;
-          followButton.innerHTML = newAction;
+fetch(url, options)
+.then(response => response.json())
+.then(data => {
+if (data['status'] === 'ok') {
+const newAction = action === 'follow' ? 'unfollow' : 'follow';
+followButton.dataset.action = newAction;
+followButton.innerHTML = newAction;
 
-          const followerCount = document.querySelector('.profile-stats div:nth-child(2) strong');
-          let total = parseInt(followerCount.innerHTML);
-          followerCount.innerHTML = action === 'follow' ? total + 1 : total - 1;
-        }
-      });
-  });
+const followerCount = document.querySelector('.profile-stats div:nth-child(2) strong');
+let total = parseInt(followerCount.innerHTML);
+followerCount.innerHTML = action === 'follow' ? total + 1 : total - 1;
+}
+});
+});
 }
 const shareBtn = document.getElementById("share-profile");
 
 if (shareBtn) {
-  shareBtn.addEventListener("click", function (e) {
-    e.preventDefault();
-    const shareUrl = window.location.href;
+shareBtn.addEventListener("click", function (e) {
+e.preventDefault();
+const shareUrl = window.location.href;
 
-    if (navigator.share) {
-      navigator.share({
-        title: document.title,
-        text: "Check out my profile!",
-        url: shareUrl
-      }).catch((error) => {
-        console.error("Error sharing:", error);
-      });
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareUrl)
-        .then(() => alert("Profile link copied to clipboard!"))
-        .catch(() => prompt("Copy this link:", shareUrl));
-    } else {
-      prompt("Copy this link:", shareUrl);
-    }
-  });
+if (navigator.share) {
+navigator.share({
+title: document.title,
+text: "Check out my profile!",
+url: shareUrl
+}).catch((error) => {
+console.error("Error sharing:", error);
+});
+} else if (navigator.clipboard) {
+navigator.clipboard.writeText(shareUrl)
+.then(() => alert("Profile link copied to clipboard!"))
+.catch(() => prompt("Copy this link:", shareUrl));
+} else {
+prompt("Copy this link:", shareUrl);
+}
+});
 }
 
 {% endblock %}

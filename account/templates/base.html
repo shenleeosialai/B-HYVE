@@ -16,12 +16,12 @@
 <body>
     <header class="glass-header">
         <div class="header-inner">
-            <a href="{% url 'dashboard' %}" class="logo">B-Hyve<span class="dot">•</span></a>
+            <a href="{% url 'home' %}" class="logo">B-Hyve<span class="dot">•</span></a>
             {% if request.user.is_authenticated %}
             <nav class="main-nav" id="mainMenu">
                 <ul>
                     <li {% if section == "dashboard" %}class="selected" {% endif %}>
-                        <a href="{% url 'dashboard' %}" class="nav-pill">
+                        <a href="{% url 'home' %}" class="nav-pill">
                             <span class="icon">✨</span> DASHBOARD
                         </a>
                     </li>
@@ -32,7 +32,7 @@
                     </li>
                     <li {% if section == "people" %}class="selected" {% endif %}>
                         <a href="{% url 'my_profile' %}" class="nav-pill">
-                            MY PROFILE
+                            PROFILE
                         </a>
                     </li>
                 </ul>

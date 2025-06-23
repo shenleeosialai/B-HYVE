@@ -33,7 +33,8 @@ urlpatterns = [
     #      name='password_reset_complete'),
 
     path('', include('django.contrib.auth.urls')),
-    path('', views.dashboard, name='dashboard'),
+    # path('', views.dashboard, name='dashboard'),
+    path('', views.home, name='home'),  # Homepage route
     path('register/', views.register, name='register'),
     path('edit/', views.edit, name='edit'),
     path('my-profile/', views.my_profile, name='my_profile'),

@@ -613,6 +613,8 @@ a.button {
 .login-overlay {
   position: fixed;
   inset: 0;
+  height: 110vh;
+  /* ensure full screen height */
   background: rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: center;
@@ -636,11 +638,10 @@ a.button {
 .login-container {
   width: 90%;
   max-width: 400px;
-  max-height: 90vh;
-  /* LIMIT height to fit screen */
-  padding: 2rem 2rem 1.5rem;
+  max-height: 110vh;
+  /* already good */
   overflow-y: auto;
-  /* enable scroll if content overflows */
+  padding: 2rem 2rem 1.5rem;
   border-radius: 1.5rem;
   background: rgba(255, 255, 255, 0.07);
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
@@ -648,6 +649,10 @@ a.button {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   animation: slideUpLogin 0.6s ease-out;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .login-container {
@@ -779,17 +784,7 @@ a.button {
   flex-grow: 1;
 }
 
-.location {
-  font-size: 0.75rem;
-  color: #aaa;
-}
-
-.dots {
-  color: #fff;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
+/* Desktop (default) */
 .insta-image-wrapper {
   width: 100%;
 }
@@ -800,6 +795,39 @@ a.button {
   display: block;
 }
 
+/* Mobile (up to 768px) */
+@media (max-width: 768px) {
+  .insta-image-wrapper.default-ratio {
+    width: 100%;
+    max-width: 500px;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .insta-image-wrapper.default-ratio .insta-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .insta-image-wrapper.adaptive-ratio {
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .insta-image-wrapper.adaptive-ratio .insta-img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+
+
 .insta-actions {
   display: flex;
   gap: 1rem;
@@ -807,9 +835,6 @@ a.button {
   font-size: 1.4rem;
 }
 
-.bookmark {
-  margin-left: auto;
-}
 
 .likes,
 .caption,
@@ -864,6 +889,7 @@ a.button {
   font-size: 0.7rem;
   color: #888;
 }
+
 /* Grid layout */
 .grid-container {
   display: grid;
@@ -1048,6 +1074,7 @@ button[type="submit"] {
 }
 
 /* Top bar */
+
 .profile-header {
   display: flex;
   justify-content: space-between;
@@ -1059,6 +1086,64 @@ button[type="submit"] {
 .username {
   font-weight: bold;
 }
+
+/* Wrap image + username together */
+.profile-pic-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Username below profile pic */
+.mobile-username {
+  display: none;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+/* Hide top bar username on mobile */
+@media (max-width: 768px) {
+  .profile-info-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-pic-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .profile-pic {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .profile-pic img {
+    margin: 0 auto;
+  }
+
+  .mobile-username {
+    display: block;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+
+  .profile-header {
+    display: none;
+  }
+}
+
 
 /* Profile + Stats row */
 .profile-info-row {
@@ -1130,7 +1215,7 @@ button[type="submit"] {
 /* Image Grid */
 .image-grid {
   display: grid !important;
-  grid-template-columns: repeat(4, 1fr) ;
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.2px !important;
   margin-top: 1rem !important;
 }
@@ -1145,11 +1230,11 @@ button[type="submit"] {
 /* Responsive Design */
 @media (max-width: 768px) {
   .profile-pic {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-top: 1rem;
-}
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 1rem;
+  }
 
   .profile-info-row {
     flex-direction: column;
@@ -1170,11 +1255,11 @@ button[type="submit"] {
   }
 
   .image-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 0.2px;
-  margin-top: 1rem;
-}
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.2px;
+    margin-top: 1rem;
+  }
 
   .btn {
     width: 85%;
