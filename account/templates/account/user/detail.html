@@ -84,6 +84,12 @@
     {% endfor %}
   </div>
 </div>
+{% if request.user == user %}
+<a href="{% url 'images:create' %}" class="floating-upload-btn" title="Add new post">
+  <i class="fas fa-plus"></i>
+</a>
+{% endif %}
+
 {% endblock %}
 
 {% block domready %}

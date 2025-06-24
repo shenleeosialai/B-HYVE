@@ -25,26 +25,21 @@ r = redis.Redis(
 @login_required
 def image_create(request):
     if request.method == "POST":
-        # form is sent
-        form = ImageCreateForm(data=request.POST)
+        images = request.FILES.getlist('image')  # handles multiple uploads
+        form = ImageCreateForm(request.POST)
+
         if form.is_valid():
-            # form data is valid
-            cd = form.cleaned_data
-            new_image = form.save(commit=False)
-            # assign current user to the item
-            new_image.user = request.user
-            new_image.save()
-            create_action(request.user, "bookmarked image", new_image)
-            messages.success(request, "Image added successfully")
-            # redirect to new created image detail view
-            return redirect(new_image.get_absolute_url())
+            for img in images:
+                instance = form.save(commit=False)  # just this!
+                instance.image = img
+                instance.user = request.user
+                instance.save()  # triggers slug creation properly
+            messages.success(request, "Images uploaded successfully")
+            return redirect('user_detail', username=request.user.username)
     else:
-        # build form with data provided by the bookmarklet via GET
-        form = ImageCreateForm(data=request.GET)
-    return render(
-        request, "images/image/create.html",
-        {"section": "images", "form": form}
-    )
+        form = ImageCreateForm()
+
+    return render(request, "images/image/create.html", {"form": form})
 
 
 def image_detail(request, id, slug):
@@ -158,3 +153,16 @@ def image_list_view(request):
     if request.GET.get('images_only'):
         return render(request, "images/image/list_images.html", context)
     return render(request, "images/image/bookmarked.html", context)
+
+
+@require_POST
+@login_required
+def ajax_delete_image(request):
+    image_id = request.POST.get('id')
+    try:
+        image = Image.objects.get(id=image_id, user=request.user)
+        image.delete()
+        return JsonResponse({'status': 'ok'})
+    except Image.DoesNotExist:
+        return JsonResponse({'status': 'error',
+                             'message': 'Not authorized or post not found.'})

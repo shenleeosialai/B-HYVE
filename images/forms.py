@@ -1,42 +1,33 @@
-import requests
 from django import forms
-from django.core.files.base import ContentFile
-from django.utils.text import slugify
-
 from .models import Image
+from urllib import request
+from django.core.files.base import ContentFile
+import os
 
 
 class ImageCreateForm(forms.ModelForm):
     class Meta:
         model = Image
-        fields = ['title', 'url', 'description']
+        fields = ('title', 'url', 'description')  # remove 'image'
         widgets = {
-            'url': forms.HiddenInput,
+            'url': forms.HiddenInput(),  # hide for manual use
         }
 
-    def clean_url(self):
-        url = self.cleaned_data['url']
-        valid_extensions = ['jpg', 'jpeg', 'png', 'webp']
-        extension = url.rsplit('.', 1)[1].lower()
-        if extension not in valid_extensions:
-            raise forms.ValidationError(
-                'The given URL does not match valid image extensions.'
-            )
-        return url
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = False  # Make all fields optional
 
-    def save(self, force_insert=False, force_update=False, commit=True):
-        image = super().save(commit=False)
-        image_url = self.cleaned_data['url']
-        name = slugify(image.title)
-        extension = image_url.rsplit('.', 1)[1].lower()
-        image_name = f'{name}.{extension}'
-        # download image from the given URL
-        response = requests.get(image_url)
-        image.image.save(
-            image_name,
-            ContentFile(response.content),
-            save=False
-        )
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        url = self.cleaned_data.get('url')
+        if url and not instance.image:
+            name = os.path.basename(url)
+            try:
+                response = request.urlopen(url)
+                instance.image.save(name, ContentFile(response.read()), save=False)
+            except Exception as e:
+                raise forms.ValidationError(f"Could not download image from URL: {e}")
         if commit:
-            image.save()
-        return image
+            instance.save()
+        return instance

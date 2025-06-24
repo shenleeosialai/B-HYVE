@@ -27,8 +27,8 @@ SECRET_KEY = 'django-insecure-v@8d*ackhoesx!0nz3z_%ffj00y*h!jq7=f-8mg$%xa-+&v1i_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['osi.com', 'localhost', '127.0.0.1', '5de6-41-90-190-34.ngrok-free.app']
-CSRF_TRUSTED_ORIGINS = ['https://5de6-41-90-190-34.ngrok-free.app']
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://32e9-41-90-190-34.ngrok-free.app']
 
 
 # Application definition
@@ -85,9 +85,9 @@ TEMPLATES = [
     },
 ]
 
-LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
-LOGOUT_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

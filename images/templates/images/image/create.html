@@ -1,13 +1,175 @@
 {% extends "base.html" %}
-
-{% block title %}Bookmark an image{% endblock %}
+{% load static %}
+{% block title %}Upload Image{% endblock %}
 
 {% block content %}
-  <h1>Bookmark an image</h1>
-  <img src="{{ request.GET.url }}" class="image-preview">
-  <form method="post">
-    {{ form.as_p }}
-    {% csrf_token %}
-    <input type="submit" value="Bookmark it!">
-  </form>
+<style>
+  .glass-card {
+    max-width: 500px;
+    margin: 3rem auto;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    color: white;
+  }
+
+  .glass-card h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  .glass-card label {
+    font-weight: 500;
+  }
+
+  .glass-card .form-control {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+  }
+
+  .glass-card .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .glass-card .btn {
+    width: 100%;
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-card .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .preview-image {
+    max-width: 100%;
+    border-radius: 12px;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .drag-drop-area {
+    border: 2px dashed rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin-bottom: 1rem;
+  }
+
+  .drag-drop-area.dragover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  #upload-toast {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1055;
+  }
+</style>
+
+<div class="glass-card">
+  <h2>Upload Image</h2>
+
+  <!-- Drag & Drop Area -->
+  <div class="drag-drop-area" id="drop-area">
+    Drag & Drop your images here or click to select
+  </div>
+
+  <div id="preview-container"></div>
+
+  <form method="post" enctype="multipart/form-data" id="upload-form">
+  {% csrf_token %}
+  {% for field in form %}
+    {% if field.name != "image" %}
+      <div class="mb-3">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+          <div class="text-danger">{{ field.errors }}</div>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  <!-- This input must be inside the form and named `image` -->
+  <input type="file" name="image" id="file-input" accept="image/*" multiple hidden>
+
+  <button type="submit" class="btn btn-primary">Upload</button>
+</form>
+
+
+<!-- Toast -->
+{% if messages %}
+  <div class="toast align-items-center text-white bg-success border-0 show" id="upload-toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        {% for message in messages %}{{ message }}{% endfor %}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block domready %}
+const dropArea = document.getElementById("drop-area");
+const fileInput = document.getElementById("file-input");
+const realImageInput = document.getElementById("real-image-input");
+const previewContainer = document.getElementById("preview-container");
+
+function previewImages(files) {
+  previewContainer.innerHTML = '';
+  for (const file of files) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      img.className = "preview-image mb-2";
+      img.style.display = "block";
+      previewContainer.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+dropArea.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", e => {
+  previewImages(e.target.files);
+});
+
+dropArea.addEventListener("dragover", e => {
+  e.preventDefault();
+  dropArea.classList.add("dragover");
+});
+
+dropArea.addEventListener("dragleave", () => {
+  dropArea.classList.remove("dragover");
+});
+
+dropArea.addEventListener("drop", e => {
+  e.preventDefault();
+  dropArea.classList.remove("dragover");
+  if (e.dataTransfer.files.length) {
+    previewImages(e.dataTransfer.files);
+    fileInput.files = e.dataTransfer.files;
+    realImageInput.files = e.dataTransfer.files;
+  }
+});
+
+if (document.getElementById("upload-toast")) {
+  const toast = new bootstrap.Toast(document.getElementById("upload-toast"));
+  toast.show();
+}
 {% endblock %}
