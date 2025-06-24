@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
 from django.urls import reverse
+from uuid import uuid4
 
 
 class Image(models.Model):
@@ -10,10 +11,10 @@ class Image(models.Model):
         related_name="images_created",
         on_delete=models.CASCADE,
     )
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, blank=True)
     slug = models.SlugField(max_length=200, blank=True)
-    url = models.URLField(max_length=2000)
     image = models.ImageField(upload_to="images/%Y/%m/%d/")
+    url = models.URLField(max_length=2000, blank=True)
     description = models.TextField(blank=True)
     created = models.DateField(auto_now_add=True)
     users_like = models.ManyToManyField(
@@ -33,7 +34,11 @@ class Image(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            if self.title:
+                self.slug = slugify(self.title)
+            else:
+                # Fallback to UUID slug if no title provided
+                self.slug = str(uuid4())[:8]
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):

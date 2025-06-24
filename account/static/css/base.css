@@ -783,7 +783,6 @@ a.button {
 .post-info {
   flex-grow: 1;
 }
-
 /* Desktop (default) */
 .insta-image-wrapper {
   width: 100%;
@@ -791,7 +790,7 @@ a.button {
 
 .insta-img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
 }
 
@@ -826,13 +825,62 @@ a.button {
   }
 }
 
-
-
 .insta-actions {
   display: flex;
   gap: 1rem;
   padding: 10px;
   font-size: 1.4rem;
+}
+/* Wrapper aligns username on left, menu on right */
+.insta-header-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eee;
+  position: relative;
+}
+
+/* 3-dot button */
+.menu-toggle {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #555;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Dropdown menu */
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 1rem;
+  background: rgb(0, 0, 0);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 0.5rem 0;
+  display: none;
+  z-index: 1000;
+  min-width: 120px;
+}
+
+.post-menu.show .menu-dropdown {
+  display: block;
+}
+
+/* Delete button */
+.delete-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.95rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
 
@@ -1287,6 +1335,28 @@ button[type="submit"] {
 .user-list img {
   border-radius: 50%;
   object-fit: cover;
+}
+.floating-upload-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #007bff;
+  color: white;
+  font-size: 1.6rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 999;
+  transition: background 0.3s ease;
+}
+
+.floating-upload-btn:hover {
+  background-color: #0056b3;
 }
 
 

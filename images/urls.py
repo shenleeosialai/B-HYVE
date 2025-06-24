@@ -10,5 +10,6 @@ urlpatterns = [
     path('like/', views.image_like, name='like'),
     path('comment/', views.image_comment, name='comment'),
     path('', views.image_list, name='list'),
+    path('ajax/delete/', views.ajax_delete_image, name='ajax_delete_image'),
     path('ranking/', views.image_ranking, name='ranking'),
 ]

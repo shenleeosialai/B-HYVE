@@ -42,7 +42,6 @@
     background-color: rgba(255, 255, 255, 0.05);
   }
 </style>
-
 <div id="post-container">
   {% for image in page_obj %}
   <div class="insta-post fade-in">
@@ -124,6 +123,8 @@
 <div id="scroll-trigger" style="height: 40px;"></div>
 <div id="end-message" style="display: none; text-align: center; margin: 1rem 0; color: #aaaaaa;">You've viewed all posts
 </div>
+<!-- <p>Drag the following button to your bookmarks toolbar to bookmark images from other websites → <a href="javascript:{% include "bookmarklet_launcher.js" %}" class="button">Bookmark it</a></p>
+<p>You can also <a href="{% url "edit" %}">edit your profile</a> or <a href="{% url "password_change" %}">change your password</a>.</p>-->
 {% endblock %}
 
 {% block domready %}

@@ -7,12 +7,24 @@
 <div class="insta-post">
 
   <!-- Header -->
+  <div class="insta-header-wrapper">
   <div class="insta-header">
     <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
     <div class="post-info">
       <strong>{{ image.user.username }}</strong>
     </div>
   </div>
+
+  {% if image.user == request.user %}
+  <div class="post-menu">
+    <button class="menu-toggle" aria-label="Post options">⋮</button>
+    <div class="menu-dropdown">
+      <button class="delete-btn" data-id="{{ image.id }}">🗑 Delete</button>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
 
   <!-- Image -->
   {% widthratio image.image.width 4 1 as w_ratio %}
@@ -128,4 +140,47 @@ commentInput.value = '';
 }
 });
 });
+// Menu toggle logic
+document.querySelectorAll('.menu-toggle').forEach(btn => {
+btn.addEventListener('click', function (e) {
+e.stopPropagation();
+const menu = this.closest('.post-menu');
+menu.classList.toggle('show');
+
+document.querySelectorAll('.post-menu').forEach(m => {
+if (m !== menu) m.classList.remove('show');
+});
+});
+});
+document.addEventListener('click', () => {
+document.querySelectorAll('.post-menu').forEach(m => m.classList.remove('show'));
+});
+
+// Delete post via AJAX
+document.querySelectorAll('.delete-btn').forEach(btn => {
+btn.addEventListener('click', function () {
+if (!confirm('Are you sure you want to delete this post?')) return;
+
+const postId = this.dataset.id;
+const formData = new FormData();
+formData.append('id', postId);
+
+fetch("{% url 'images:ajax_delete_image' %}", {
+method: 'POST',
+headers: { 'X-CSRFToken': csrftoken },
+body: formData
+})
+.then(res => res.json())
+.then(data => {
+if (data.status === 'ok') {
+// Remove the post from the page
+const postEl = this.closest('.insta-post');
+postEl.remove();
+} else {
+alert(data.message || 'Error deleting post.');
+}
+});
+});
+});
+
 {% endblock %}
