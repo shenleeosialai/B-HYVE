@@ -25,7 +25,7 @@ r = redis.Redis(
 @login_required
 def image_create(request):
     if request.method == "POST":
-        images = request.FILES.getlist('image')  # handles multiple uploads
+        images = request.FILES.getlist("image")  # handles multiple uploads
         form = ImageCreateForm(request.POST)
 
         if form.is_valid():
@@ -35,7 +35,7 @@ def image_create(request):
                 instance.user = request.user
                 instance.save()  # triggers slug creation properly
             messages.success(request, "Images uploaded successfully")
-            return redirect('user_detail', username=request.user.username)
+            return redirect("user_detail", username=request.user.username)
     else:
         form = ImageCreateForm()
 
@@ -76,32 +76,40 @@ def image_like(request):
 
 @login_required
 def image_list(request):
-    images = Image.objects.all()
-    paginator = Paginator(images, 8)
+    followed_ids = request.user.following.values_list("id", flat=True)
+    followed_images = Image.objects.filter(user__in=followed_ids).order_by("-created")
+    other_images = Image.objects.exclude(user__in=followed_ids).order_by("-created")
+
+    all_images = list(followed_images) + list(other_images)
+
+    paginator = Paginator(all_images, 50)
     page = request.GET.get("page")
     images_only = request.GET.get("images_only")
+
     try:
         images = paginator.page(page)
     except PageNotAnInteger:
-        # If page is not an integer deliver the first page
         images = paginator.page(1)
     except EmptyPage:
         if images_only:
-            # If AJAX request and page out of range
-            # return an empty page
             return HttpResponse("")
-        # If page out of range return last page of results
         images = paginator.page(paginator.num_pages)
-    if images_only:
-        return render(
-            request,
-            "images/image/list_images.html",
-            {"section": "images", "images": images},
-        )
-    return render(
-        request, "images/image/list.html",
-        {"section": "images", "images": images}
+
+    new_user = (
+        not followed_images.exists()
+        and not Image.objects.filter(user=request.user).exists()
     )
+
+    context = {
+        "section": "images",
+        "images": images,
+        "new_user": new_user,
+    }
+
+    if images_only:
+        return render(request, "images/image/list_images.html", context)
+
+    return render(request, "images/image/list.html", context)
 
 
 @login_required
@@ -122,35 +130,35 @@ def image_ranking(request):
 @require_POST
 @login_required
 def image_comment(request):
-    image_id = request.POST.get('image_id')
-    text = request.POST.get('comment')
+    image_id = request.POST.get("image_id")
+    text = request.POST.get("comment")
 
     try:
         image = Image.objects.get(id=image_id)
-        comment = Comment.objects.create(image=image, user=request.user,
-                                         text=text)
-        return JsonResponse({'status': 'ok', 'text': comment.text,
-                             'user': request.user.first_name})
+        comment = Comment.objects.create(image=image, user=request.user, text=text)
+        return JsonResponse(
+            {"status": "ok", "text": comment.text, "user": request.user.first_name}
+        )
     except Image.DoesNotExist:
-        return JsonResponse({'status': 'error'})
+        return JsonResponse({"status": "error"})
 
 
 def image_list_view(request):
-    query = request.GET.get('q')
+    query = request.GET.get("q")
     if query:
         users = User.objects.filter(
-            Q(username__icontains=query) |
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query)
+            Q(username__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
         )
-        images = Image.objects.filter(user__in=users).select_related('user')
+        images = Image.objects.filter(user__in=users).select_related("user")
     else:
         images = Image.objects.all()
 
     context = {
-        'images': images,
+        "images": images,
     }
-    if request.GET.get('images_only'):
+    if request.GET.get("images_only"):
         return render(request, "images/image/list_images.html", context)
     return render(request, "images/image/bookmarked.html", context)
 
@@ -158,11 +166,12 @@ def image_list_view(request):
 @require_POST
 @login_required
 def ajax_delete_image(request):
-    image_id = request.POST.get('id')
+    image_id = request.POST.get("id")
     try:
         image = Image.objects.get(id=image_id, user=request.user)
         image.delete()
-        return JsonResponse({'status': 'ok'})
+        return JsonResponse({"status": "ok"})
     except Image.DoesNotExist:
-        return JsonResponse({'status': 'error',
-                             'message': 'Not authorized or post not found.'})
+        return JsonResponse(
+            {"status": "error", "message": "Not authorized or post not found."}
+        )

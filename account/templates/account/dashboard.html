@@ -41,91 +41,138 @@
   .follow-btn:hover {
     background-color: rgba(255, 255, 255, 0.05);
   }
+  .suggested-scroll {
+  display: flex;
+  overflow-x: auto;
+  padding: 1rem 0.5rem;
+  gap: 14px;
+  scroll-snap-type: x mandatory;
+  border-bottom: 1px solid #000000;
+  margin-bottom: 0.1rem;
+}
+
+.story-bubble {
+  flex: 0 0 auto;
+  text-align: center;
+  scroll-snap-align: start;
+}
+
+.story-bubble img {
+  width: 65px;
+  height: 65px;
+  object-fit: cover;
+  border-radius: 50%;
+  padding: 2px;
+  border: 2px solid transparent;
+  background: linear-gradient(to right, #a33f3f, #dc4589, #ad79c2, #ee7a7a);
+  transition: border-color 0.2s ease;
+}
+
+.story-bubble img:hover {
+  border-color: #fff;
+}
+
+.username-text {
+  color: #ccc;
+  font-size: 0.7rem;
+  margin-top: 5px;
+  white-space: nowrap;
+}
+
 </style>
-<div id="post-container">
-  {% for image in page_obj %}
-  <div class="insta-post fade-in">
-    <!-- Header -->
-    <div class="insta-header">
-      <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
-      <div class="post-info">
-        <strong>
-          <a href="{% url 'user_detail' image.user.username %}" class="username-link">
-          {{ image.user.username }}
-        </a>
-          {% if image.user != request.user %}
-          {% if not image.is_following %}
-          <span class="suggested-label">Suggested</span>
-          <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="follow">Follow</button>
-          {% else %}
-          <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="unfollow">Unfollow</button>
-          {% endif %}
-          {% endif %}
-        </strong>
-      </div>
-    </div>
-
-    <!-- Image -->
-    <div class="insta-image-wrapper">
-      <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
-    </div>
-
-    <!-- Action bar -->
-    <div class="insta-actions">
-      <a href="#" class="like-btn" data-id="{{ image.id }}"
-        data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
-        <i class="fa{% if request.user in image.users_like.all %}s{% else %}r{% endif %} fa-heart"></i>
-      </a>
-      <i class="far fa-comment"></i>
-      <i class="far fa-paper-plane"></i>
-    </div>
-
-    <!-- Likes -->
-    <div class="likes">
-      {% if image.users_like.count > 0 %}
-      Liked by <strong>{{ image.users_like.first.username }}</strong> and <strong>{{ image.users_like.count|add:"-1" }}
-        others</strong>
+<!-- Suggested Users Story Bubble Scroll -->
+<div class="mt-3 px-2">
+  <div class="text-muted fw-semibold" style="font-size: 0.50rem; margin-left: 0.5rem;">Follow Suggested Users</div>
+</div>
+<div class="suggested-scroll mt-2">
+  {% for u in suggested_users %}
+  <div class="story-bubble">
+    <a href="{% url 'user_detail' u.username %}">
+      {% if u.profile.photo %}
+        <img src="{{ u.profile.photo.url }}" alt="{{ u.username }}">
       {% else %}
-      No likes yet
+        <img src="{% static 'images/profile-user.avif' %}" alt="{{ u.username }}">
       {% endif %}
-    </div>
-
-    <!-- Caption -->
-    <div class="caption">
-      <strong>{{ image.user.username }}</strong> {{ image.description }}
-    </div>
-
-    <!-- Comments -->
-    <div class="comments" id="comments-list-{{ image.id }}">
-      {% for comment in image.comments.all %}
-      <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
-      {% endfor %}
-    </div>
-
-    <!-- Add comment -->
-    <div class="add-comment">
-      <form class="comment-form" data-id="{{ image.id }}">
-        {% csrf_token %}
-        <input type="text" name="comment" placeholder="Add a comment..." required>
-        <button type="submit">Post</button>
-      </form>
-    </div>
-
-    <!-- Timestamp -->
-    <div class="timestamp">
-      {{ image.created|date:"F d, Y" }}
-    </div>
+    </a>
+    <div class="username-text">{{ u.username|truncatechars:10 }}</div>
   </div>
   {% endfor %}
 </div>
 
-<!-- Trigger + End message -->
-<div id="scroll-trigger" style="height: 40px;"></div>
-<div id="end-message" style="display: none; text-align: center; margin: 1rem 0; color: #aaaaaa;">You've viewed all posts
+<div id="post-container">
+  {% if page_obj.has_other_pages or page_obj.object_list %}
+    {% for image in page_obj %}
+    <div class="insta-post fade-in">
+      <div class="insta-header mb-2 d-flex align-items-center gap-2">
+        <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
+        <div class="post-info">
+          <strong>
+            <a href="{% url 'user_detail' image.user.username %}" class="username-link">{{ image.user.username }}</a>
+            {% if image.user != request.user %}
+              {% if not image.is_following %}
+                <span class="suggested-label">Suggested</span>
+                <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="follow">Follow</button>
+              {% else %}
+                <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="unfollow">Unfollow</button>
+              {% endif %}
+            {% endif %}
+          </strong>
+        </div>
+      </div>
+      <div class="insta-content-wrapper d-flex flex-column flex-md-row gap-4">
+        <div class="insta-image-wrapper flex-shrink-0">
+          <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+        </div>
+        <div class="post-meta">
+          <div class="insta-actions mb-2">
+            <a href="#" class="like-btn" data-id="{{ image.id }}"
+              data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
+              <i class="fa{% if request.user in image.users_like.all %}s{% else %}r{% endif %} fa-heart"></i>
+            </a>
+            <i class="far fa-comment"></i>
+            <i class="far fa-paper-plane"></i>
+          </div>
+          <div class="likes">
+            {% if image.users_like.count > 0 %}
+              Liked by <strong>{{ image.users_like.first.username }}</strong> and <strong>{{ image.users_like.count|add:"-1" }} others</strong>
+            {% else %}
+              No likes yet
+            {% endif %}
+          </div>
+          <div class="caption">
+            <strong>{{ image.user.username }}</strong> {{ image.description }}
+          </div>
+          <div class="comments" id="comments-list-{{ image.id }}">
+            {% for comment in image.comments.all %}
+              <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
+            {% endfor %}
+          </div>
+          <div class="add-comment mt-2">
+            <form class="comment-form" data-id="{{ image.id }}">
+              {% csrf_token %}
+              <input type="text" name="comment" placeholder="Add a comment..." required>
+              <button type="submit">Post</button>
+            </form>
+          </div>
+          <div class="timestamp mt-2 text-muted small">
+            {{ image.created|date:"F d, Y" }}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% elif is_new_user %}
+    <div class="no-posts-message text-center mt-4">
+      <p class="text-muted">You're not following anyone yet and haven't posted. Start by following some users above!</p>
+    </div>
+  {% endif %}
 </div>
+
+<div id="scroll-trigger" style="height: 40px;"></div>
+<div id="end-message" style="display: none; text-align: center; margin: 1rem 0; color: #aaaaaa;">You've viewed all posts</div>
+{% endblock %}
 <!-- <p>Drag the following button to your bookmarks toolbar to bookmark images from other websites → <a href="javascript:{% include "bookmarklet_launcher.js" %}" class="button">Bookmark it</a></p>
 <p>You can also <a href="{% url "edit" %}">edit your profile</a> or <a href="{% url "password_change" %}">change your password</a>.</p>-->
-{% endblock %}
 
 {% block domready %}
 const likeUrl = '{% url "images:like" %}';

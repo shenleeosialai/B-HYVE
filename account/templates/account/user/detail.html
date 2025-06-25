@@ -20,7 +20,7 @@
       {% if user.profile.photo %}
         <img src="{% thumbnail user.profile.photo 120x120 crop='center' %}" alt="{{ user.get_full_name }}">
       {% else %}
-        <img src="{% static 'img/default_profile.png' %}" width="120" height="120" alt="Default profile photo">
+        <img src="{% static 'images/profile-user.avif' %}" width="120" height="120" alt="{% static 'images/profile_user.avif' %}">
       {% endif %}
     </div>
     <!-- Username below image (mobile only) -->
