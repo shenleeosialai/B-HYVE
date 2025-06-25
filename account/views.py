@@ -91,7 +91,6 @@ def home(request):
     # AJAX infinite scroll
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         if switch_to_others:
-            # Load first page of non-followed users
             other_images = Image.objects.exclude(user=user).exclude(user__in=followed_users)
             other_images = other_images.annotate(
                 is_following=Case(
@@ -103,7 +102,7 @@ def home(request):
 
             paginator = Paginator(other_images, 5)
             page_obj = paginator.get_page(1)
-            show_followed = False  # update flag for frontend
+            show_followed = False
 
         html = render_to_string(
             "images/image/list_images.html",
@@ -116,11 +115,19 @@ def home(request):
             "next_followed": "1" if show_followed else "0"
         })
 
+    # Suggested users (not the logged-in user and not already followed)
+    suggested_users = User.objects.exclude(id=user.id).exclude(
+        id__in=followed_users
+    ).select_related('profile')[:10]
+
     # Full page render
     return render(
         request,
         "account/dashboard.html",
-        {"page_obj": page_obj}
+        {
+            "page_obj": page_obj,
+            "suggested_users": suggested_users,
+        }
     )
 
 
@@ -137,7 +144,8 @@ def register(request):
             # Create the user profile
             Profile.objects.create(user=new_user)
             create_action(new_user, "has created an account")
-            return redirect("my_profile", {"new_user": new_user})
+            Contact.objects.get_or_create(user_from=new_user, user_to=new_user)
+            return redirect("my_profile")
     else:
         user_form = UserRegistrationForm()
     return render(request, "account/register.html", {"user_form": user_form})
@@ -225,14 +233,24 @@ def user_follow(request):
         try:
             user = User.objects.get(id=user_id)
             if action == "follow":
-                Contact.objects.get_or_create(user_from=request.user, user_to=user)
+                Contact.objects.get_or_create(user_from=request.user,
+                                              user_to=user)
                 create_action(request.user, "is following", user)
             else:
-                Contact.objects.filter(user_from=request.user, user_to=user).delete()
+                # Prevent users from unfollowing themselves
+                if user != request.user:
+                    Contact.objects.filter(user_from=request.user,
+                                           user_to=user).delete()
+
+            # ✅ Always ensure self-follow
+            Contact.objects.get_or_create(user_from=request.user,
+                                          user_to=request.user)
+
             return JsonResponse({"status": "ok"})
         except User.DoesNotExist:
             return JsonResponse({"status": "error"})
     return JsonResponse({"status": "error"})
+
 
 
 @login_required

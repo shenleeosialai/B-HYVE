@@ -535,7 +535,7 @@ ol {
 #content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 17px;
+  padding: 0;
   background: #000000;
   border-radius: 20px;
   backdrop-filter: blur(10px);
@@ -613,16 +613,17 @@ a.button {
 .login-overlay {
   position: fixed;
   inset: 0;
-  height: 110vh;
-  /* ensure full screen height */
+  height: 90vh;
   background: rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: center;
-  align-items: center;
+  overflow-y: auto;
+  align-items: flex-start;
+  padding: 2rem 1rem;
   z-index: 1000;
   animation: overlayFadeIn 0.4s ease-out forwards;
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px)
 }
 
 @keyframes overlayFadeIn {
@@ -638,8 +639,7 @@ a.button {
 .login-container {
   width: 90%;
   max-width: 400px;
-  max-height: 110vh;
-  /* already good */
+  max-height: 150vh;
   overflow-y: auto;
   padding: 2rem 2rem 1.5rem;
   border-radius: 1.5rem;
@@ -784,21 +784,53 @@ a.button {
   flex-grow: 1;
 }
 /* Desktop (default) */
+.insta-post {
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+}
+
+.insta-content-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
 .insta-image-wrapper {
   width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
 }
 
 .insta-img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  max-height: 550px;
   display: block;
+}
+
+.post-meta {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* Mobile (up to 768px) */
 @media (max-width: 768px) {
+  .insta-post {
+    flex-direction: column;
+  }
+
+  .insta-content-wrapper {
+    flex-direction: column;
+  }
+
   .insta-image-wrapper.default-ratio {
     width: 100%;
     max-width: 500px;
+    max-height: 550px;
     aspect-ratio: 4 / 5;
     overflow: hidden;
     display: flex;
@@ -823,7 +855,13 @@ a.button {
     object-fit: contain;
     display: block;
   }
+
+  .post-meta {
+    width: 100%;
+    margin-top: 1rem;
+  }
 }
+
 
 .insta-actions {
   display: flex;
@@ -837,7 +875,7 @@ a.button {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #000000;
   position: relative;
 }
 
@@ -965,25 +1003,12 @@ a.button {
   overflow: hidden;
 }
 
-/* Remove translateY hover */
-.grid-item:hover {
-  transform: none;
-}
-
-/* When hovering any grid-item, blur all grid-items... */
-.grid-container:hover .grid-item {
-  filter: blur(4px);
-}
-
-/* ...except the one being hovered */
-.grid-container:hover .grid-item:hover {
-  filter: none;
-}
 
 /* --- search bar --- */
 .search-bar-container {
   margin: 2rem auto;
   text-align: center;
+  margin-bottom: 0.9px;
 }
 
 .search-input {
@@ -1271,7 +1296,7 @@ button[type="submit"] {
 .grid-item img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 4px;
 }
 
@@ -1310,9 +1335,9 @@ button[type="submit"] {
   }
 
   .btn {
-    width: 85%;
+    width: 81%;
     text-align: center;
-    padding: 10px 14px;
+    padding: 10px 12px;
     /* smaller height and width via padding */
     font-size: 0.8rem;
     /* optional: slightly smaller text */

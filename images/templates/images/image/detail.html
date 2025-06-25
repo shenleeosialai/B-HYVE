@@ -7,87 +7,94 @@
 <div class="insta-post">
 
   <!-- Header -->
-  <div class="insta-header-wrapper">
-  <div class="insta-header">
-    <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
-    <div class="post-info">
-      <strong>{{ image.user.username }}</strong>
+  <div class="insta-header-wrapper d-flex justify-content-between align-items-start">
+    <div class="insta-header d-flex align-items-center gap-2">
+      <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
+      <div class="post-info">
+        <strong>{{ image.user.username }}</strong>
+      </div>
+    </div>
+
+    {% if image.user == request.user %}
+    <div class="post-menu">
+      <button class="menu-toggle" aria-label="Post options">⋮</button>
+      <div class="menu-dropdown">
+        <button class="delete-btn" data-id="{{ image.id }}">🗑 Delete</button>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Desktop-style wrapper -->
+  <div class="insta-content-wrapper d-flex flex-column flex-md-row gap-4 mt-3">
+
+    <!-- Image block with ratio logic preserved -->
+    {% widthratio image.image.width 4 1 as w_ratio %}
+    {% widthratio image.image.height 5 1 as h_ratio %}
+
+    {% if w_ratio == h_ratio %}
+      {% with "default-ratio" as extra_class %}
+      <div class="insta-image-wrapper {{ extra_class }} flex-shrink-0">
+        <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+      </div>
+      {% endwith %}
+    {% else %}
+      {% with "adaptive-ratio" as extra_class %}
+      <div class="insta-image-wrapper {{ extra_class }} flex-shrink-0">
+        <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+      </div>
+      {% endwith %}
+    {% endif %}
+
+    <!-- Post metadata -->
+    <div class="post-meta">
+
+      <!-- Action bar -->
+      <div class="insta-actions">
+        <a href="#" class="like-btn" data-id="{{ image.id }}"
+          data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
+          <i class="fa{% if request.user in image.users_like.all %}s{% else %}r{% endif %} fa-heart"></i>
+        </a>
+        <i class="far fa-comment"></i>
+        <i class="far fa-paper-plane"></i>
+      </div>
+
+      <!-- Likes -->
+      <div class="likes">
+        Liked by <strong>{{ image.users_like.first.username }}</strong> and 
+        <strong>{{ image.users_like.count|add:"-1" }} others</strong>
+      </div>
+
+      <!-- Caption -->
+      <div class="caption">
+        <strong>{{ image.user.username }}</strong> {{ image.description }}
+      </div>
+
+      <!-- Comments -->
+      <div class="comments" id="comments-list">
+        {% for comment in image.comments.all %}
+        <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
+        {% endfor %}
+      </div>
+
+      <!-- Add comment -->
+      <div class="add-comment">
+        <form id="comment-form" data-id="{{ image.id }}">
+          {% csrf_token %}
+          <input type="text" name="comment" placeholder="Add a comment..." required>
+          <button type="submit">Post</button>
+        </form>
+      </div>
+
+      <!-- Timestamp -->
+      <div class="timestamp mt-2 text-muted small">
+        {{ image.created|date:"F d, Y" }}
+      </div>
+
     </div>
   </div>
-
-  {% if image.user == request.user %}
-  <div class="post-menu">
-    <button class="menu-toggle" aria-label="Post options">⋮</button>
-    <div class="menu-dropdown">
-      <button class="delete-btn" data-id="{{ image.id }}">🗑 Delete</button>
-    </div>
-  </div>
-  {% endif %}
 </div>
 
-
-  <!-- Image -->
-  {% widthratio image.image.width 4 1 as w_ratio %}
-  {% widthratio image.image.height 5 1 as h_ratio %}
-
-  {% if w_ratio == h_ratio %}
-  {% with "default-ratio" as extra_class %}
-  <div class="insta-image-wrapper {{ extra_class }}">
-    <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
-  </div>
-  {% endwith %}
-  {% else %}
-  {% with "adaptive-ratio" as extra_class %}
-  <div class="insta-image-wrapper {{ extra_class }}">
-    <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
-  </div>
-  {% endwith %}
-  {% endif %}
-
-
-
-  <!-- Action bar -->
-  <div class="insta-actions">
-    <a href="#" class="like-btn" data-id="{{ image.id }}"
-      data-action="{% if request.user in image.users_like.all %}un{% endif %}like">
-      <i class="fa{% if request.user in image.users_like.all %}s{% else %}r{% endif %} fa-heart"></i>
-    </a>
-    <i class="far fa-comment"></i>
-    <i class="far fa-paper-plane"></i>
-  </div>
-
-  <!-- Likes -->
-  <div class="likes">
-    Liked by <strong>{{ image.users_like.first.username }}</strong> and <strong>{{ image.users_like.count|add:"-1" }}
-      others</strong>
-  </div>
-
-  <!-- Caption -->
-  <div class="caption">
-    <strong>{{ image.user.username }}</strong> {{ image.description }}
-  </div>
-
-  <!-- Comments -->
-  <div class="comments" id="comments-list">
-    {% for comment in image.comments.all %}
-    <p><strong>{{ comment.user.username }}</strong> {{ comment.text }}</p>
-    {% endfor %}
-  </div>
-
-  <!-- Add comment -->
-  <div class="add-comment">
-    <form id="comment-form" data-id="{{ image.id }}">
-      {% csrf_token %}
-      <input type="text" name="comment" placeholder="Add a comment..." required>
-      <button type="submit">Post</button>
-    </form>
-  </div>
-
-  <!-- Timestamp -->
-  <div class="timestamp">
-    {{ image.created|date:"F d, Y" }}
-  </div>
-</div>
 {% endblock %}
 
 {% block domready %}
