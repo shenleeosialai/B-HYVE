@@ -25,15 +25,20 @@ r = redis.Redis(
 @login_required
 def image_create(request):
     if request.method == "POST":
-        images = request.FILES.getlist("image")  # handles multiple uploads
+        images = request.FILES.getlist("image")
         form = ImageCreateForm(request.POST)
 
         if form.is_valid():
             for img in images:
-                instance = form.save(commit=False)  # just this!
+                instance = Image(
+                    user=request.user,
+                    title=form.cleaned_data.get('title'),
+                    url=form.cleaned_data.get('url'),
+                    description=form.cleaned_data.get('description'),
+                )
                 instance.image = img
-                instance.user = request.user
-                instance.save()  # triggers slug creation properly
+                instance.save()
+
             messages.success(request, "Images uploaded successfully")
             return redirect("user_detail", username=request.user.username)
     else:
