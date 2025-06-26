@@ -17,6 +17,8 @@ from django.core.paginator import Paginator
 from images.models import Image
 from django.template.loader import render_to_string
 from django.db.models import Case, When, BooleanField
+from images .models import Story, StoryView
+
 
 
 def user_login(request):
@@ -315,3 +317,25 @@ def not_following_back(request):
             "people": page_obj,
         },
     )
+
+
+@login_required
+def upload_story(request):
+    if request.method == 'POST':
+        print("Received POST")
+
+        uploaded_file = request.FILES.get('image')
+        if not uploaded_file:
+            print("No image file uploaded")
+            return HttpResponse("No file uploaded", status=400)
+
+        print(f"Uploading story for user: {request.user.username}")
+        print(f"Uploaded file name: {uploaded_file.name}")
+
+        # Attempt to create the story
+        story = Story.objects.create(user=request.user, image=uploaded_file)
+        print(f"Story created: {story}")
+
+        return redirect('user_detail', username=request.user.username)  # adjust name if needed
+
+    return HttpResponse("Invalid method", status=405)

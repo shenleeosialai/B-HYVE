@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'easy_thumbnails',
     'actions.apps.ActionsConfig',
     'debug_toolbar',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -88,6 +89,10 @@ TEMPLATES = [
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'login'
+
+# Celery settings
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

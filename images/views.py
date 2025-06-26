@@ -13,6 +13,9 @@ from django.conf import settings
 import redis
 from django.db.models import Q
 from django.contrib.auth.models import User
+from .models import Story
+from django.utils import timezone
+from datetime import timedelta
 
 
 r = redis.Redis(
@@ -32,9 +35,9 @@ def image_create(request):
             for img in images:
                 instance = Image(
                     user=request.user,
-                    title=form.cleaned_data.get('title'),
-                    url=form.cleaned_data.get('url'),
-                    description=form.cleaned_data.get('description'),
+                    title=form.cleaned_data.get("title"),
+                    url=form.cleaned_data.get("url"),
+                    description=form.cleaned_data.get("description"),
                 )
                 instance.image = img
                 instance.save()
@@ -105,10 +108,15 @@ def image_list(request):
         and not Image.objects.filter(user=request.user).exists()
     )
 
+    # ✅ Add story logic
+    cutoff = timezone.now() - timedelta(hours=24)
+    stories = Story.objects.filter(created__gte=cutoff).order_by('-created')
+
     context = {
         "section": "images",
         "images": images,
         "new_user": new_user,
+        "stories": stories,  # ✅ pass to template
     }
 
     if images_only:
@@ -140,9 +148,11 @@ def image_comment(request):
 
     try:
         image = Image.objects.get(id=image_id)
-        comment = Comment.objects.create(image=image, user=request.user, text=text)
+        comment = Comment.objects.create(image=image, user=request.user,
+                                         text=text)
         return JsonResponse(
-            {"status": "ok", "text": comment.text, "user": request.user.first_name}
+            {"status": "ok", "text": comment.text,
+             "user": request.user.first_name}
         )
     except Image.DoesNotExist:
         return JsonResponse({"status": "error"})
@@ -180,3 +190,20 @@ def ajax_delete_image(request):
         return JsonResponse(
             {"status": "error", "message": "Not authorized or post not found."}
         )
+
+
+@login_required
+def story_list(request):
+    stories = (
+        Story.objects.filter(created__gte=timezone.now() - timedelta(hours=24))
+        .select_related("user")
+        .distinct("user")
+    )
+    return render(request, "images/image/story_list.html",
+                  {"stories": stories})
+
+
+@login_required
+def story_detail(request, story_id):
+    story = get_object_or_404(Story, id=story_id)
+    return render(request, 'images/image/story_detail.html', {'story': story})

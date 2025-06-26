@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    command: gunicorn your_project.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/code
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build: .
+    command: celery -A your_project worker --loglevel=info
+    volumes:
+      - .:/code
+    depends_on:
+      - web
+      - redis
+    env_file:
+      - .env
+
+  celery-beat:
+    build: .
+    command: celery -A your_project beat --loglevel=info
+    volumes:
+      - .:/code
+    depends_on:
+      - web
+      - redis
+    env_file:
+      - .env
+
+  redis:
+    image: redis:7
