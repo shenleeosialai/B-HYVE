@@ -14,15 +14,31 @@
   </div>
 
 <!-- Profile Picture + Stats -->
-<div class="profile-info-row">
-  <div class="profile-pic-section">
-    <div class="profile-pic">
+{% if request.user == user %}
+  <form id="story-upload-form" method="post" enctype="multipart/form-data" action="{% url 'upload_story' %}">
+    {% csrf_token %}
+    <label for="story-upload-input" class="profile-pic clickable">
       {% if user.profile.photo %}
         <img src="{% thumbnail user.profile.photo 120x120 crop='center' %}" alt="{{ user.get_full_name }}">
       {% else %}
-        <img src="{% static 'images/profile-user.avif' %}" width="120" height="120" alt="{% static 'images/profile_user.avif' %}">
+        <img src="{% static 'images/profile-user.avif' %}" width="120" height="120" alt="Default user">
       {% endif %}
-    </div>
+      <div class="add-icon-overlay">
+        <i class="fas fa-plus"></i>
+      </div>
+    </label>
+    <input id="story-upload-input" type="file" name="image" accept="image/*" hidden onchange="document.getElementById('story-upload-form').submit();">
+  </form>
+{% else %}
+  <div class="profile-pic">
+    {% if user.profile.photo %}
+      <img src="{% thumbnail user.profile.photo 120x120 crop='center' %}" alt="{{ user.get_full_name }}">
+    {% else %}
+      <img src="{% static 'images/profile-user.avif' %}" width="120" height="120" alt="Default user">
+    {% endif %}
+  </div>
+{% endif %}
+
     <!-- Username below image (mobile only) -->
     <div class="mobile-username">@{{ user.username }}</div>
   </div>

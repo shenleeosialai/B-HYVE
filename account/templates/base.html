@@ -18,7 +18,7 @@
 <body>
     <header class="glass-header">
         <div class="header-inner">
-            <a href="{% url 'home' %}" class="logo">B-Hyve<span class="dot">•</span></a>
+            <a href="{% url 'my_profile' %}" class="logo">B-Hyve<span class="dot">•</span></a>
             {% if request.user.is_authenticated %}
             <nav class="main-nav" id="mainMenu">
                 <ul>

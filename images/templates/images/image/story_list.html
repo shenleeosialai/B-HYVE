@@ -1,0 +1,54 @@
+<div class="story-bar">
+  {% for story in stories %}
+  <div class="story-circle">
+    <div class="story-circle" onclick="openStoryModal(this)" data-image-url="{{ story.image.url }}"
+      data-username="{{ story.user.username }}">
+      <img src="{{ story.image.url }}" alt="{{ story.user.username }}">
+    </div>
+    <span class="story-username">{{ story.user.username }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  let stories = Array.from(document.querySelectorAll('.story-avatar'));
+  let currentIndex = -1;
+
+  function openStoryModal(elem) {
+    currentIndex = stories.indexOf(elem);
+    const imageUrl = elem.dataset.imageUrl;
+    const username = elem.dataset.username;
+
+    document.getElementById('storyImage').src = imageUrl;
+    document.getElementById('storyUsername').textContent = '@' + username;
+    document.getElementById('storyModal').classList.remove('hidden');
+  }
+
+  function closeStoryModal() {
+    document.getElementById('storyModal').classList.add('hidden');
+  }
+
+  function nextStory() {
+    if (currentIndex + 1 < stories.length) {
+      openStoryModal(stories[++currentIndex]);
+    }
+  }
+
+  function prevStory() {
+    if (currentIndex - 1 >= 0) {
+      openStoryModal(stories[--currentIndex]);
+    }
+  }
+
+  // Optional: close with ESC
+  document.addEventListener('keydown', function (e) {
+    if (e.key === "Escape") {
+      closeStoryModal();
+    } else if (e.key === "ArrowRight") {
+      nextStory();
+    } else if (e.key === "ArrowLeft") {
+      prevStory();
+    }
+  });
+
+</script>

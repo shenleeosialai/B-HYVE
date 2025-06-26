@@ -3,6 +3,9 @@ from django.conf import settings
 from django.utils.text import slugify
 from django.urls import reverse
 from uuid import uuid4
+from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import timedelta
 
 
 class Image(models.Model):
@@ -58,3 +61,26 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'Comment by {self.user} on {self.image}'
+
+
+class Story(models.Model):
+    user = models.ForeignKey(User, related_name='stories',
+                             on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='images/')
+    created = models.DateTimeField(auto_now_add=True)
+
+    def is_expired(self):
+        return timezone.now() > self.created + timedelta(hours=24)
+
+    def viewers(self):
+        return self.views.values_list('viewer', flat=True)
+
+
+class StoryView(models.Model):
+    story = models.ForeignKey(Story, related_name='views',
+                              on_delete=models.CASCADE)
+    viewer = models.ForeignKey(User, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('story', 'viewer')

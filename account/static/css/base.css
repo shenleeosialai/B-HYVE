@@ -1132,6 +1132,84 @@ button[type="submit"] {
 .user .title:hover {
   text-decoration: underline;
 }
+/* Stories */
+.story-bar {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+}
+
+.story-circle {
+  text-align: center;
+}
+
+.story-circle img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 3px solid #f56040; /* like Instagram */
+  object-fit: cover;
+}
+
+.story-username {
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+  display: block;
+}
+.story-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.story-modal.hidden {
+  display: none;
+}
+
+.story-content {
+  position: relative;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.story-content img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 10px;
+}
+
+.story-username {
+  color: #fff;
+  margin-top: 10px;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 28px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.story-nav button {
+  background: transparent;
+  border: none;
+  font-size: 30px;
+  color: white;
+  cursor: pointer;
+  padding: 10px;
+}
+
 
 /* User profile */
 .profile-container {
@@ -1233,6 +1311,21 @@ button[type="submit"] {
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.profile-pic.clickable {
+  position: relative;
+  cursor: pointer;
+}
+
+.add-icon-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #00cfff;
+  border-radius: 50%;
+  padding: 6px;
+  color: white;
+  font-size: 1.2rem;
 }
 
 /* Stats */
@@ -1365,7 +1458,10 @@ button[type="submit"] {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  background-color: #007bff;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
   font-size: 1.6rem;
   width: 50px;
@@ -1381,7 +1477,7 @@ button[type="submit"] {
 }
 
 .floating-upload-btn:hover {
-  background-color: #0056b3;
+  background-color: #b90612;
 }
 
 
