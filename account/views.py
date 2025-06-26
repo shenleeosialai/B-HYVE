@@ -242,7 +242,7 @@ def user_follow(request):
                     Contact.objects.filter(user_from=request.user,
                                            user_to=user).delete()
 
-            # ✅ Always ensure self-follow
+            # Always ensure self-follow
             Contact.objects.get_or_create(user_from=request.user,
                                           user_to=request.user)
 
