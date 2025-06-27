@@ -1,54 +1,204 @@
+{% load story_extras %}
+{% load static %}
+
 <div class="story-bar">
-  {% for story in stories %}
-  <div class="story-circle">
-    <div class="story-circle" onclick="openStoryModal(this)" data-image-url="{{ story.image.url }}"
-      data-username="{{ story.user.username }}">
-      <img src="{{ story.image.url }}" alt="{{ story.user.username }}">
-    </div>
-    <span class="story-username">{{ story.user.username }}</span>
-  </div>
+  {% for user, stories in grouped_stories.items %}
+    {% if stories %}
+      <div class="story-circle" onclick="openStoryModal('{{ user.username }}')" data-username="{{ user.username }}">
+        <script type="application/json" id="user_{{ user.username }}">
+          [
+            {% for story in stories %}
+              {% for img in story.images.all %}
+                "{{ img.image.url }}"{% if not forloop.last or not forloop.parentloop.last %}, {% endif %}
+              {% endfor %}
+            {% endfor %}
+          ]
+        </script>
+        {% if user.profile.photo %}
+          <img src="{{ user.profile.photo.url }}" alt="{{ user.username }}">
+        {% else %}
+          <img src="{% static 'images/profile-user.avif' %}" alt="Default user">
+        {% endif %}
+        <span class="story-username">{{ user.username }}</span>
+      </div>
+    {% endif %}
   {% endfor %}
 </div>
 
+<!-- Story Modal -->
+<div id="storyModal" class="modal hidden">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="storyUsername" style="color:white; margin: 0;">@username</h3>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="dropdown-wrapper" style="position: relative;" id="storyMenuWrapper">
+          <span id="storyMenuIcon" class="menu-icon hidden" style="cursor: pointer; color: white;">⋮</span>
+          <div id="storyMenuDropdown" class="dropdown-menu hidden" style="
+              position: absolute;
+              top: 25px;
+              right: 0;
+              background: rgba(0,0,0,0.9);
+              color: red;
+              padding: 6px 10px;
+              border-radius: 4px;
+              cursor: pointer;
+              white-space: nowrap;
+              z-index: 20;
+            " onclick="deleteCurrentStoryImage()">Delete</div>
+        </div>
+        <span class="close" onclick="closeStoryModal()" style="font-size: 24px;">&times;</span>
+      </div>
+    </div>
+
+    <div class="progress-container" id="storyProgress"></div>
+    <div id="storySlides" class="story-slides"></div>
+
+    <div class="tap-zone left" onclick="prevStoryImage()"></div>
+    <div class="tap-zone right" onclick="nextStoryImage()"></div>
+  </div>
+</div>
+
 <script>
-  let stories = Array.from(document.querySelectorAll('.story-avatar'));
-  let currentIndex = -1;
+  let currentImageIndex = 0;
+  let currentImages = [];
+  let autoplayTimer;
+  let activeUsername = '';
 
-  function openStoryModal(elem) {
-    currentIndex = stories.indexOf(elem);
-    const imageUrl = elem.dataset.imageUrl;
-    const username = elem.dataset.username;
+  function openStoryModal(username) {
+    const dataEl = document.getElementById('user_' + username);
+    if (!dataEl) return;
 
-    document.getElementById('storyImage').src = imageUrl;
+    try {
+      currentImages = JSON.parse(dataEl.textContent.trim());
+    } catch (e) {
+      console.error("Invalid JSON for", username);
+      return;
+    }
+
+    activeUsername = username;
+    currentImageIndex = 0;
     document.getElementById('storyUsername').textContent = '@' + username;
+
+    const storySlides = document.getElementById('storySlides');
+    const storyProgress = document.getElementById('storyProgress');
+    storySlides.innerHTML = '';
+    storyProgress.innerHTML = '';
+
+    currentImages.forEach((imgUrl, i) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'story-image-wrapper';
+
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.className = i === 0 ? 'active' : '';
+      wrapper.appendChild(img);
+      storySlides.appendChild(wrapper);
+
+      const bar = document.createElement('div');
+      bar.className = 'progress-bar' + (i === 0 ? ' active' : '');
+      storyProgress.appendChild(bar);
+    });
+
+    const menuIcon = document.getElementById('storyMenuIcon');
+    const menuDropdown = document.getElementById('storyMenuDropdown');
+
+    if (username === "{{ request.user.username }}") {
+      const iconWrapper = document.getElementById('storyMenuWrapper');
+      const oldIcon = document.getElementById('storyMenuIcon');
+      const newIcon = oldIcon.cloneNode(true);
+      oldIcon.replaceWith(newIcon);
+
+      newIcon.classList.remove('hidden');
+      newIcon.id = 'storyMenuIcon'; // ensure ID is maintained
+
+      newIcon.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById('storyMenuDropdown');
+        dropdown.classList.toggle('hidden');
+      });
+    } else {
+      document.getElementById('storyMenuIcon').classList.add('hidden');
+      document.getElementById('storyMenuDropdown').classList.add('hidden');
+    }
+
     document.getElementById('storyModal').classList.remove('hidden');
+    startAutoplay();
+  }
+
+  function showImageAt(index) {
+    const images = document.querySelectorAll('#storySlides img');
+    const bars = document.querySelectorAll('.progress-bar');
+    if (index < 0 || index >= images.length) return;
+
+    images.forEach((img, i) => img.classList.toggle('active', i === index));
+    bars.forEach((bar, i) => bar.classList.toggle('active', i === index));
+    currentImageIndex = index;
+  }
+
+  function nextStoryImage() {
+    if (currentImageIndex + 1 < currentImages.length) {
+      showImageAt(currentImageIndex + 1);
+      startAutoplay();
+    } else {
+      closeStoryModal();
+    }
+  }
+
+  function prevStoryImage() {
+    if (currentImageIndex - 1 >= 0) {
+      showImageAt(currentImageIndex - 1);
+      startAutoplay();
+    }
+  }
+
+  function startAutoplay() {
+    clearTimeout(autoplayTimer);
+    autoplayTimer = setTimeout(() => {
+      nextStoryImage();
+    }, 5000);
   }
 
   function closeStoryModal() {
+    clearTimeout(autoplayTimer);
     document.getElementById('storyModal').classList.add('hidden');
+    document.getElementById('storyMenuDropdown').classList.add('hidden');
   }
 
-  function nextStory() {
-    if (currentIndex + 1 < stories.length) {
-      openStoryModal(stories[++currentIndex]);
+  function deleteCurrentStoryImage() {
+    const imageUrl = currentImages[currentImageIndex];
+    if (!imageUrl) return;
+
+    if (confirm("Delete this image?")) {
+      fetch("{% url 'images:delete_story_image' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ image_url: imageUrl })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'ok') {
+          currentImages.splice(currentImageIndex, 1);
+          document.querySelectorAll('#storySlides .story-image-wrapper')[currentImageIndex]?.remove();
+          document.querySelectorAll('.progress-bar')[currentImageIndex]?.remove();
+
+          if (currentImages.length === 0) {
+            closeStoryModal();
+          } else {
+            showImageAt(Math.min(currentImageIndex, currentImages.length - 1));
+          }
+        }
+      });
     }
   }
 
-  function prevStory() {
-    if (currentIndex - 1 >= 0) {
-      openStoryModal(stories[--currentIndex]);
-    }
-  }
-
-  // Optional: close with ESC
-  document.addEventListener('keydown', function (e) {
-    if (e.key === "Escape") {
-      closeStoryModal();
-    } else if (e.key === "ArrowRight") {
-      nextStory();
-    } else if (e.key === "ArrowLeft") {
-      prevStory();
+  // Global: Close menu if clicked outside
+  document.addEventListener('click', function (e) {
+    const wrapper = document.getElementById('storyMenuWrapper');
+    if (!wrapper.contains(e.target)) {
+      document.getElementById('storyMenuDropdown').classList.add('hidden');
     }
   });
-
 </script>

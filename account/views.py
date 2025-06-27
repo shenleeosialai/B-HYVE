@@ -17,8 +17,7 @@ from django.core.paginator import Paginator
 from images.models import Image
 from django.template.loader import render_to_string
 from django.db.models import Case, When, BooleanField
-from images .models import Story, StoryView
-
+from images .models import Story, StoryImage
 
 
 def user_login(request):
@@ -158,7 +157,8 @@ def edit(request):
     if request.method == "POST":
         user_form = UserEditForm(instance=request.user, data=request.POST)
         profile_form = ProfileEditForm(
-            instance=request.user.profile, data=request.POST, files=request.FILES
+            instance=request.user.profile, data=request.POST,
+            files=request.FILES
         )
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
@@ -198,7 +198,8 @@ def user_list(request):
             users = []  # Empty input still counts as "searched"
 
     if ajax:
-        return JsonResponse([{"username": u.username} for u in users], safe=False)
+        return JsonResponse([{"username": u.username} for u in users],
+                            safe=False)
 
     return render(
         request,
@@ -254,7 +255,6 @@ def user_follow(request):
     return JsonResponse({"status": "error"})
 
 
-
 @login_required
 def user_followers(request, username):
     user = get_object_or_404(User, username=username, is_active=True)
@@ -302,7 +302,8 @@ def not_following_back(request):
     followers = user.followers.all()  # People who follow me
 
     # Users I follow who do not follow me back
-    non_mutual = following.exclude(id__in=followers.values_list("id", flat=True))
+    non_mutual = following.exclude(id__in=followers.values_list("id",
+                                                                flat=True))
 
     paginator = Paginator(non_mutual, 10)  # Add pagination
     page_number = request.GET.get("page")
@@ -322,20 +323,18 @@ def not_following_back(request):
 @login_required
 def upload_story(request):
     if request.method == 'POST':
-        print("Received POST")
+        uploaded_files = request.FILES.getlist('images')
 
-        uploaded_file = request.FILES.get('image')
-        if not uploaded_file:
-            print("No image file uploaded")
-            return HttpResponse("No file uploaded", status=400)
+        if not uploaded_files:
+            return HttpResponse("No images uploaded", status=400)
 
-        print(f"Uploading story for user: {request.user.username}")
-        print(f"Uploaded file name: {uploaded_file.name}")
+        # Create one story object for this session
+        story = Story.objects.create(user=request.user)
 
-        # Attempt to create the story
-        story = Story.objects.create(user=request.user, image=uploaded_file)
-        print(f"Story created: {story}")
+        # Attach all uploaded images
+        for image in uploaded_files:
+            StoryImage.objects.create(story=story, image=image)
 
-        return redirect('user_detail', username=request.user.username)  # adjust name if needed
+        return redirect('user_detail', username=request.user.username)
 
     return HttpResponse("Invalid method", status=405)

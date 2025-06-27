@@ -13,92 +13,99 @@
     <div class="username">@{{ user.username }}</div>
   </div>
 
-<!-- Profile Picture + Stats -->
+  <!-- Profile Picture + Stats -->
 {% if request.user == user %}
-  <form id="story-upload-form" method="post" enctype="multipart/form-data" action="{% url 'upload_story' %}">
-    {% csrf_token %}
-    <label for="story-upload-input" class="profile-pic clickable">
-      {% if user.profile.photo %}
+  <div class="profile-pic-wrapper-mobile">
+    <form id="story-upload-form" method="post" enctype="multipart/form-data" action="{% url 'upload_story' %}">
+      {% csrf_token %}
+      <label for="story-upload-input" class="profile-pic clickable">
+        {% if user.profile.photo %}
         <img src="{% thumbnail user.profile.photo 120x120 crop='center' %}" alt="{{ user.get_full_name }}">
-      {% else %}
+        {% else %}
         <img src="{% static 'images/profile-user.avif' %}" width="120" height="120" alt="Default user">
-      {% endif %}
-      <div class="add-icon-overlay">
-        <i class="fas fa-plus"></i>
-      </div>
-    </label>
-    <input id="story-upload-input" type="file" name="image" accept="image/*" hidden onchange="document.getElementById('story-upload-form').submit();">
-  </form>
+        {% endif %}
+        <div class="add-icon-overlay">
+          <i class="fas fa-plus"></i>
+        </div>
+      </label>
+      <input id="story-upload-input" type="file" name="images" accept="image/*" multiple hidden
+        onchange="document.getElementById('story-upload-form').submit();">
+    </form>
+  </div>
 {% else %}
-  <div class="profile-pic">
-    {% if user.profile.photo %}
+  <div class="profile-pic-wrapper-mobile">
+    <div class="profile-pic">
+      {% if user.profile.photo %}
       <img src="{% thumbnail user.profile.photo 120x120 crop='center' %}" alt="{{ user.get_full_name }}">
-    {% else %}
+      {% else %}
       <img src="{% static 'images/profile-user.avif' %}" width="120" height="120" alt="Default user">
-    {% endif %}
+      {% endif %}
+    </div>
   </div>
 {% endif %}
 
-    <!-- Username below image (mobile only) -->
-    <div class="mobile-username">@{{ user.username }}</div>
-  </div>
 
-  <div class="profile-stats">
-    <div><strong>{{ user.images_created.count }}</strong><br>Posts</div>
-    <div>
-      <a href="{% url 'user_followers' user.username %}">
-        <strong>{{ user.followers.count }}</strong><br>Followers
-      </a>
-    </div>
-    <div>
-      <a href="{% url 'user_following' user.username %}">
-        <strong>{{ user.following.count }}</strong><br>Following
-      </a>
-    </div>
+
+  <!-- Username below image (mobile only) -->
+  <div class="mobile-username">@{{ user.username }}</div>
+</div>
+
+<div class="profile-stats">
+  <div><strong>{{ user.images_created.count }}</strong><br>Posts</div>
+  <div>
+    <a href="{% url 'user_followers' user.username %}">
+      <strong>{{ user.followers.count }}</strong><br>Followers
+    </a>
   </div>
+  <div>
+    <a href="{% url 'user_following' user.username %}">
+      <strong>{{ user.following.count }}</strong><br>Following
+    </a>
+  </div>
+</div>
 </div>
 
 
-  <!-- Bio -->
-  <div class="profile-bio">
-    <!-- <strong>{{ user.get_full_name }}</strong><br> -->
-    <p>{{ user.profile.bio|default:"" }}</p>
-    {% if user.profile.website %}
-    <a href="{{ user.profile.website }}" target="_blank">{{ user.profile.website }}</a>
-    {% endif %}
-  </div>
+<!-- Bio -->
+<div class="profile-bio">
+  <!-- <strong>{{ user.get_full_name }}</strong><br> -->
+  <p>{{ user.profile.bio|default:"" }}</p>
+  {% if user.profile.website %}
+  <a href="{{ user.profile.website }}" target="_blank">{{ user.profile.website }}</a>
+  {% endif %}
+</div>
 
-  <!-- Buttons -->
-  {% if request.user == user %}
-  <div class="profile-buttons">
-    <a href="{% url 'edit' %}" class="btn">Edit Profile</a>
-    <a href="#" class="btn" id="share-profile">Share Profile</a>
-  </div>
-  {% else %}
-  <div class="profile-buttons">
-    <a href="#" data-id="{{ user.id }}" data-action="{% if request.user in user.followers.all %}un{% endif %}follow"
-      class="follow btn">
-      {% if request.user not in user.followers.all %}
-      Follow
-      {% else %}
-      Unfollow
-      {% endif %}
+<!-- Buttons -->
+{% if request.user == user %}
+<div class="profile-buttons">
+  <a href="{% url 'edit' %}" class="btn">Edit Profile</a>
+  <a href="#" class="btn" id="share-profile">Share Profile</a>
+</div>
+{% else %}
+<div class="profile-buttons">
+  <a href="#" data-id="{{ user.id }}" data-action="{% if request.user in user.followers.all %}un{% endif %}follow"
+    class="follow btn">
+    {% if request.user not in user.followers.all %}
+    Follow
+    {% else %}
+    Unfollow
+    {% endif %}
+  </a>
+</div>
+{% endif %}
+
+<!-- Image Grid -->
+<div class="image-grid">
+  {% for image in user.images_created.all %}
+  <div class="grid-item">
+    <a href="{{ image.get_absolute_url }}">
+      <img src="{% thumbnail image.image 300x300 crop='center' %}" alt="{{ image.title }}">
     </a>
   </div>
-  {% endif %}
-
-  <!-- Image Grid -->
-  <div class="image-grid">
-    {% for image in user.images_created.all %}
-    <div class="grid-item">
-      <a href="{{ image.get_absolute_url }}">
-        <img src="{% thumbnail image.image 300x300 crop='center' %}" alt="{{ image.title }}">
-      </a>
-    </div>
-    {% empty %}
-    <p>No posts yet.</p>
-    {% endfor %}
-  </div>
+  {% empty %}
+  <p>No posts yet.</p>
+  {% endfor %}
+</div>
 </div>
 {% if request.user == user %}
 <a href="{% url 'images:create' %}" class="floating-upload-btn" title="Add new post">

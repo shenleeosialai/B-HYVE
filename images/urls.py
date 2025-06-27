@@ -12,7 +12,9 @@ urlpatterns = [
     path('', views.image_list, name='list'),
     path('ajax/delete/', views.ajax_delete_image, name='ajax_delete_image'),
     path('ranking/', views.image_ranking, name='ranking'),
-    path('', views.story_list, name='story_list'),
+    # path('', views.story_list, name='story_list'),
     path('story/<int:story_id>/', views.story_detail, name='story_detail'),
+    path('delete-story-image/', views.delete_story_image,
+         name='delete_story_image'),
 
 ]

@@ -13,9 +13,12 @@ from django.conf import settings
 import redis
 from django.db.models import Q
 from django.contrib.auth.models import User
-from .models import Story
+from .models import Story, StoryImage
 from django.utils import timezone
 from datetime import timedelta
+from collections import defaultdict
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 
 r = redis.Redis(
@@ -108,21 +111,21 @@ def image_list(request):
         and not Image.objects.filter(user=request.user).exists()
     )
 
-    # ✅ Add story logic
-    cutoff = timezone.now() - timedelta(hours=24)
-    stories = Story.objects.filter(created__gte=cutoff).order_by('-created')
+    grouped_stories = dict(get_active_stories_grouped_by_user())
 
     context = {
         "section": "images",
         "images": images,
         "new_user": new_user,
-        "stories": stories,  # ✅ pass to template
+        "grouped_stories": grouped_stories,
     }
 
     if images_only:
         return render(request, "images/image/list_images.html", context)
+    print("Grouped stories:", grouped_stories)
 
     return render(request, "images/image/list.html", context)
+
 
 
 @login_required
@@ -207,3 +210,42 @@ def story_list(request):
 def story_detail(request, story_id):
     story = get_object_or_404(Story, id=story_id)
     return render(request, 'images/image/story_detail.html', {'story': story})
+
+
+def get_active_stories_grouped_by_user():
+    grouped = defaultdict(list)
+    stories = Story.objects.filter(
+        created__gte=timezone.now() - timedelta(hours=24)
+    ).select_related('user').order_by('created')
+
+    for story in stories:
+        grouped[story.user].append(story)
+
+    return grouped
+
+
+@login_required
+def explore_view(request):
+    grouped_stories = get_active_stories_grouped_by_user()
+    return render(request, 'images/image/list.html', {
+        'grouped_stories': grouped_stories,
+        'section': 'images'
+    })
+
+
+@csrf_exempt
+@login_required
+def delete_story_image(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        image_url = data.get('image_url')
+        if image_url:
+            try:
+                img = StoryImage.objects.get(image=image_url.replace('/media/', ''))
+                if img.story.user == request.user:
+                    img.delete()
+                    return JsonResponse({'status': 'ok'})
+            except StoryImage.DoesNotExist:
+                pass
+    return JsonResponse({'status': 'error'})
+

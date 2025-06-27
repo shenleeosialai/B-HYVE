@@ -151,6 +151,7 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-left: 20px;
 }
 
 /* Futuristic glassmorphism animated button */
@@ -783,6 +784,7 @@ a.button {
 .post-info {
   flex-grow: 1;
 }
+
 /* Desktop (default) */
 .insta-post {
   display: flex;
@@ -869,6 +871,7 @@ a.button {
   padding: 10px;
   font-size: 1.4rem;
 }
+
 /* Wrapper aligns username on left, menu on right */
 .insta-header-wrapper {
   display: flex;
@@ -896,7 +899,7 @@ a.button {
   right: 1rem;
   background: rgb(0, 0, 0);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 0.5rem 0;
   display: none;
   z-index: 1000;
@@ -1006,9 +1009,8 @@ a.button {
 
 /* --- search bar --- */
 .search-bar-container {
-  margin: 2rem auto;
+  margin: 0.3rem auto 0.9px;
   text-align: center;
-  margin-bottom: 0.9px;
 }
 
 .search-input {
@@ -1132,83 +1134,205 @@ button[type="submit"] {
 .user .title:hover {
   text-decoration: underline;
 }
+
 /* Stories */
 .story-bar {
   display: flex;
   gap: 1rem;
   overflow-x: auto;
-  padding: 1rem 0;
+  padding-bottom: 9px;
 }
 
 .story-circle {
+  position: relative;
   text-align: center;
+  cursor: pointer;
 }
 
 .story-circle img {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  border: 3px solid #f56040; /* like Instagram */
+  width: 65px;
+  height: 65px;
   object-fit: cover;
+  border-radius: 50%;
+  padding: 2px;
+  border: 2px solid transparent;
+  background: linear-gradient(to right, #6f2d2d, #803a59, #aa58cb, #dfa4a4);
+  transition: border-color 0.2s ease;
 }
 
 .story-username {
-  font-size: 0.8rem;
-  margin-top: 0.3rem;
   display: block;
-}
-.story-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.9);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  color: #8e8b8b;
 }
 
-.story-modal.hidden {
+.modal.hidden {
   display: none;
 }
 
-.story-content {
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  flex-direction: column;
+}
+
+.modal-content {
   position: relative;
-  text-align: center;
-  max-width: 400px;
   width: 90%;
-}
-
-.story-content img {
-  max-width: 100%;
-  max-height: 80vh;
-  border-radius: 10px;
-}
-
-.story-username {
-  color: #fff;
-  margin-top: 10px;
-}
-
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 28px;
-  color: #fff;
-  cursor: pointer;
-}
-
-.story-nav button {
+  max-width: 400px;
   background: transparent;
-  border: none;
-  font-size: 30px;
+}
+
+.modal-content img {
+  width: 100%;
+  border-radius: 10px;
+  display: none;
+}
+
+.modal-content img.active {
+  display: block;
+}
+
+.close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  font-size: 2rem;
   color: white;
   cursor: pointer;
-  padding: 10px;
 }
+
+.progress-container {
+  display: flex;
+  height: 4px;
+  margin-bottom: 10px;
+}
+
+.progress-bar {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 2px;
+  border-radius: 2px;
+}
+
+.progress-bar.active {
+  background: white;
+  animation: progressFill 5s linear forwards;
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+.tap-zone {
+  position: absolute;
+  top: 10%;
+  bottom: 20%;
+  width: 50%;
+  z-index: 10;
+}
+
+
+.tap-zone.left {
+  left: 0;
+  top: 10%;
+  bottom: 10%;
+}
+
+.tap-zone.right {
+  right: 0;
+  top: 10%;
+  bottom: 10%;
+}
+
+.viewer-count {
+  color: white;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.story-image-wrapper {
+  position: relative;
+}
+
+.menu-icon {
+  position: relative;
+  top: 10%;
+  right: 12px;
+  font-size: 24px;
+  color: white;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 36px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.85);
+  border-radius: 6px;
+  padding: 5px 10px;
+  z-index: 9999 !important;
+}
+
+.dropdown-menu.hidden {
+  display: none;
+}
+
+.dropdown-item {
+  color: red;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.progress-container {
+  display: flex;
+  margin: 10px 0;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  margin-right: 4px;
+}
+
+.progress-bar.active {
+  background: white;
+}
+
+.tap-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 10;
+}
+
+.tap-zone.left {
+  left: 0;
+}
+
+.tap-zone.right {
+  right: 0;
+}
+
 
 
 /* User profile */
@@ -1312,21 +1436,60 @@ button[type="submit"] {
   border: 2px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
+
 .profile-pic.clickable {
   position: relative;
-  cursor: pointer;
+  display: inline-block;
+  /* Key: keeps width tight to image */
+  width: 115px;
+  height: 115px;
 }
+
 
 .add-icon-overlay {
   position: absolute;
   bottom: 0;
   right: 0;
-  background: #00cfff;
+  transform: translate(30%, 30%);
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.496);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgb(255, 177, 177);
   border-radius: 50%;
-  padding: 6px;
   color: white;
-  font-size: 1.2rem;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
 }
+
+@media (max-width: 480px) {
+  .profile-pic.clickable {
+    width: 114px;
+    height: 114px;
+  }
+
+  .add-icon-overlay {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    transform: translate(25%, 25%);
+  }
+
+  .profile-pic-wrapper-mobile {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+}
+
+
+
 
 /* Stats */
 .profile-stats {
@@ -1454,6 +1617,7 @@ button[type="submit"] {
   border-radius: 50%;
   object-fit: cover;
 }
+
 .floating-upload-btn {
   position: fixed;
   bottom: 24px;
@@ -1471,7 +1635,7 @@ button[type="submit"] {
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 999;
   transition: background 0.3s ease;
 }

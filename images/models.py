@@ -66,7 +66,6 @@ class Comment(models.Model):
 class Story(models.Model):
     user = models.ForeignKey(User, related_name='stories',
                              on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='images/')
     created = models.DateTimeField(auto_now_add=True)
 
     def is_expired(self):
@@ -74,6 +73,19 @@ class Story(models.Model):
 
     def viewers(self):
         return self.views.values_list('viewer', flat=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.created}"
+
+
+class StoryImage(models.Model):
+    story = models.ForeignKey(Story, related_name='images',
+                              on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='stories/%Y/%m/%d/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for {self.story.user.username}'s story"
 
 
 class StoryView(models.Model):
