@@ -83,6 +83,8 @@ class StoryImage(models.Model):
                               on_delete=models.CASCADE)
     image = models.ImageField(upload_to='stories/%Y/%m/%d/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    viewers = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                     related_name='viewed_stories', blank=True)
 
     def __str__(self):
         return f"Image for {self.story.user.username}'s story"

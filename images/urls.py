@@ -16,5 +16,7 @@ urlpatterns = [
     path('story/<int:story_id>/', views.story_detail, name='story_detail'),
     path('delete-story-image/', views.delete_story_image,
          name='delete_story_image'),
+    path('log-story-view/', views.log_story_view, name='log_story_view'),
+    path('story-viewers/', views.story_viewers, name='story_viewers'),
 
 ]

@@ -127,7 +127,6 @@ def image_list(request):
     return render(request, "images/image/list.html", context)
 
 
-
 @login_required
 def image_ranking(request):
     # get image ranking dictionary
@@ -241,7 +240,8 @@ def delete_story_image(request):
         image_url = data.get('image_url')
         if image_url:
             try:
-                img = StoryImage.objects.get(image=image_url.replace('/media/', ''))
+                img = StoryImage.objects.get(image=image_url.replace
+                                             ('/media/', ''))
                 if img.story.user == request.user:
                     img.delete()
                     return JsonResponse({'status': 'ok'})
@@ -249,3 +249,30 @@ def delete_story_image(request):
                 pass
     return JsonResponse({'status': 'error'})
 
+
+@login_required
+def log_story_view(request):
+    if request.method == 'POST':
+        image_url = request.POST.get('image_url')
+        try:
+            img = StoryImage.objects.get(image=image_url)
+            img.viewers.add(request.user)
+            return JsonResponse({'status': 'ok'})
+        except StoryImage.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Not found'})
+
+
+@login_required
+def story_viewers(request):
+    image_url = request.GET.get('image_url')
+    try:
+        img = StoryImage.objects.get(image=image_url, story__user=request.user)
+        viewers = img.viewers.all()
+        data = [{
+            'username': v.username,
+            'photo': v.profile.photo.url if v.profile.photo else
+            '/static/images/profile-user.avif'
+        } for v in viewers]
+        return JsonResponse({'status': 'ok', 'viewers': data})
+    except StoryImage.DoesNotExist:
+        return JsonResponse({'status': 'error'})
