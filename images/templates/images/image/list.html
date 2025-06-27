@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load story_extras %}
+
 
 {% block title %}Explore{% endblock %}
 
@@ -31,17 +33,6 @@
 
 <div id="image-list">
   {% include "images/image/list_images.html" %}
-</div>
-<div id="storyModal" class="story-modal hidden">
-  <div class="story-content">
-    <span class="close-btn" onclick="closeStoryModal()">&times;</span>
-    <img id="storyImage" src="" alt="Story" />
-    <div class="story-username" id="storyUsername"></div>
-    <div class="story-nav">
-      <button onclick="prevStory()">&#10094;</button>
-      <button onclick="nextStory()">&#10095;</button>
-    </div>
-  </div>
 </div>
 
 {% endblock %}
