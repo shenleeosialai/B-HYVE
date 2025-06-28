@@ -17,7 +17,8 @@ from django.core.paginator import Paginator
 from images.models import Image
 from django.template.loader import render_to_string
 from django.db.models import Case, When, BooleanField
-from images .models import Story, StoryImage
+from images.models import Story, StoryImage
+import random
 
 
 def user_login(request):
@@ -53,8 +54,8 @@ def dashboard(request):
         "target"
     )[:10]
     return render(
-        request, "account/dashboard.html", {"section": "dashboard",
-                                            "actions": actions}
+        request, "account/dashboard.html",
+        {"section": "dashboard", "actions": actions}
     )
 
 
@@ -64,77 +65,85 @@ def home(request):
     page = int(request.GET.get("page", 1))
     show_followed = request.GET.get("followed", "1") == "1"
 
-    # Exclude self-follow from followed list
+    # Get followed users (excluding self)
     followed_users = list(
         user.following.exclude(id=user.id).values_list("id", flat=True)
     )
     is_new_user = len(followed_users) == 0
 
-    # Force suggested view if only self-following
     if is_new_user:
         show_followed = False
 
-    if show_followed:
-        images = Image.objects.filter(user__in=followed_users)
-        suggested = False
-    else:
-        images = Image.objects.exclude(user=user).exclude(user__in=followed_users)
-        suggested = True
+    key = "random_image_ids_followed" if show_followed else "random_image_ids_others"
+    is_initial_load = page == 1 and request.headers.get("x-requested-with") != "XMLHttpRequest"
 
-    images = images.annotate(
-        is_following=Case(
-            When(user__in=followed_users, then=True),
-            default=False,
-            output_field=BooleanField()
-        )
-    ).order_by("-created")
-
-    paginator = Paginator(images, 5)
-    page_obj = paginator.get_page(page)
-
-    switch_to_others = (
-        show_followed and not page_obj.has_next() and page_obj.object_list
-    )
-
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        if switch_to_others:
-            other_images = Image.objects.exclude(user=user).exclude(user__in=followed_users).annotate(
-                is_following=Case(
-                    When(user__in=followed_users, then=True),
-                    default=False,
-                    output_field=BooleanField()
-                )
-            ).order_by("-created")
-
-            paginator = Paginator(other_images, 5)
-            page_obj = paginator.get_page(1)
-            show_followed = False
+    # Fresh shuffle on first load or if session key is missing
+    if is_initial_load or key not in request.session:
+        if show_followed:
+            base_queryset = Image.objects.filter(user__in=followed_users)
+            suggested = False
+        else:
+            base_queryset = Image.objects.exclude(user=user).exclude(user__in=followed_users)
             suggested = True
 
+        all_ids = list(base_queryset.values_list("id", flat=True))
+        random.shuffle(all_ids)
+        request.session[key] = all_ids
+    else:
+        all_ids = request.session.get(key, [])
+        suggested = not show_followed
+
+    # Paginate 5 per scroll
+    paginator = Paginator(all_ids, 5)
+    page_obj = paginator.get_page(page)
+    page_id_list = list(page_obj.object_list)
+
+    # Fetch and annotate image objects
+    images = (
+        Image.objects.filter(id__in=page_id_list, user__isnull=False)
+        .select_related("user", "user__profile")
+        .annotate(
+            is_following=Case(
+                When(user__in=followed_users, then=True),
+                default=False,
+                output_field=BooleanField(),
+            )
+        )
+    )
+
+    # Maintain shuffled order
+    images_dict = {img.id: img for img in images}
+    images = [images_dict[img_id] for img_id in page_id_list if img_id in images_dict]
+
+    # AJAX infinite scroll response
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         html = render_to_string(
             "images/image/list_images.html",
-            {"page_obj": page_obj, "suggested": suggested},
-            request=request
+            {"page_obj": page_obj, "images": images, "suggested": suggested},
+            request=request,
         )
         return JsonResponse({
             "html": html,
             "has_more": page_obj.has_next(),
-            "next_followed": "1" if show_followed else "0"
+            "next_followed": "1" if show_followed else "0",
         })
 
-    # Suggested users (excluding already followed + self)
-    suggested_users = User.objects.exclude(id=user.id).exclude(
-        id__in=followed_users
-    ).select_related('profile')[:10]
+    # Suggested users for sidebar or top bar
+    suggested_users = (
+        User.objects.exclude(id=user.id)
+        .exclude(id__in=followed_users)
+        .select_related("profile")[:100]
+    )
 
     return render(
         request,
         "account/dashboard.html",
         {
             "page_obj": page_obj,
+            "images": images,
             "suggested_users": suggested_users,
             "suggested": suggested,
-        }
+        },
     )
 
 
@@ -163,8 +172,7 @@ def edit(request):
     if request.method == "POST":
         user_form = UserEditForm(instance=request.user, data=request.POST)
         profile_form = ProfileEditForm(
-            instance=request.user.profile, data=request.POST,
-            files=request.FILES
+            instance=request.user.profile, data=request.POST, files=request.FILES
         )
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
@@ -204,8 +212,7 @@ def user_list(request):
             users = []  # Empty input still counts as "searched"
 
     if ajax:
-        return JsonResponse([{"username": u.username} for u in users],
-                            safe=False)
+        return JsonResponse([{"username": u.username} for u in users], safe=False)
 
     return render(
         request,
@@ -222,16 +229,14 @@ def user_list(request):
 def user_detail(request, username):
     user = get_object_or_404(User, username=username, is_active=True)
     return render(
-        request, "account/user/detail.html",
-        {"section": "people", "user": user}
+        request, "account/user/detail.html", {"section": "people", "user": user}
     )
 
 
 @login_required
 def my_profile(request):
     return render(
-        request, "account/user/detail.html",
-        {"section": "people", "user": request.user}
+        request, "account/user/detail.html", {"section": "people", "user": request.user}
     )
 
 
@@ -244,18 +249,17 @@ def user_follow(request):
         try:
             user = User.objects.get(id=user_id)
             if action == "follow":
-                Contact.objects.get_or_create(user_from=request.user,
-                                              user_to=user)
+                Contact.objects.get_or_create(user_from=request.user, user_to=user)
                 create_action(request.user, "is following", user)
             else:
                 # Prevent users from unfollowing themselves
                 if user != request.user:
-                    Contact.objects.filter(user_from=request.user,
-                                           user_to=user).delete()
+                    Contact.objects.filter(
+                        user_from=request.user, user_to=user
+                    ).delete()
 
             # Always ensure self-follow
-            Contact.objects.get_or_create(user_from=request.user,
-                                          user_to=request.user)
+            Contact.objects.get_or_create(user_from=request.user, user_to=request.user)
 
             return JsonResponse({"status": "ok"})
         except User.DoesNotExist:
@@ -310,8 +314,7 @@ def not_following_back(request):
     followers = user.followers.all()  # People who follow me
 
     # Users I follow who do not follow me back
-    non_mutual = following.exclude(id__in=followers.values_list("id",
-                                                                flat=True))
+    non_mutual = following.exclude(id__in=followers.values_list("id", flat=True))
 
     paginator = Paginator(non_mutual, 10)  # Add pagination
     page_number = request.GET.get("page")
@@ -330,8 +333,8 @@ def not_following_back(request):
 
 @login_required
 def upload_story(request):
-    if request.method == 'POST':
-        uploaded_files = request.FILES.getlist('images')
+    if request.method == "POST":
+        uploaded_files = request.FILES.getlist("images")
 
         if not uploaded_files:
             return HttpResponse("No media uploaded", status=400)
@@ -341,13 +344,13 @@ def upload_story(request):
         for uploaded_file in uploaded_files:
             content_type = uploaded_file.content_type
 
-            if content_type.startswith('image/'):
+            if content_type.startswith("image/"):
                 StoryImage.objects.create(story=story, image=uploaded_file)
-            elif content_type.startswith('video/'):
+            elif content_type.startswith("video/"):
                 StoryImage.objects.create(story=story, video=uploaded_file)
             else:
                 continue  # Ignore unsupported files
 
-        return redirect('user_detail', username=request.user.username)
+        return redirect("user_detail", username=request.user.username)
 
     return HttpResponse("Invalid method", status=405)
