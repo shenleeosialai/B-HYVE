@@ -17,6 +17,7 @@ class Image(models.Model):
     title = models.CharField(max_length=200, blank=True)
     slug = models.SlugField(max_length=200, blank=True)
     video = models.FileField(upload_to='videos/', blank=True, null=True)
+    autoplay = models.BooleanField(default=True)
     image = models.ImageField(upload_to="images/%Y/%m/%d/")
     url = models.URLField(max_length=2000, blank=True)
     description = models.TextField(blank=True)
