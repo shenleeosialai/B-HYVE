@@ -64,15 +64,23 @@ def home(request):
     page = int(request.GET.get("page", 1))
     show_followed = request.GET.get("followed", "1") == "1"
 
-    followed_users = list(user.following.values_list("id", flat=True))
+    # Exclude self-follow from followed list
+    followed_users = list(
+        user.following.exclude(id=user.id).values_list("id", flat=True)
+    )
+    is_new_user = len(followed_users) == 0
 
-    # Query depending on followed/others
+    # Force suggested view if only self-following
+    if is_new_user:
+        show_followed = False
+
     if show_followed:
         images = Image.objects.filter(user__in=followed_users)
+        suggested = False
     else:
         images = Image.objects.exclude(user=user).exclude(user__in=followed_users)
+        suggested = True
 
-    # Annotate whether current user is following the image's author
     images = images.annotate(
         is_following=Case(
             When(user__in=followed_users, then=True),
@@ -84,16 +92,13 @@ def home(request):
     paginator = Paginator(images, 5)
     page_obj = paginator.get_page(page)
 
-    # Determine if we should switch from followed to others
     switch_to_others = (
         show_followed and not page_obj.has_next() and page_obj.object_list
     )
 
-    # AJAX infinite scroll
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         if switch_to_others:
-            other_images = Image.objects.exclude(user=user).exclude(user__in=followed_users)
-            other_images = other_images.annotate(
+            other_images = Image.objects.exclude(user=user).exclude(user__in=followed_users).annotate(
                 is_following=Case(
                     When(user__in=followed_users, then=True),
                     default=False,
@@ -104,10 +109,11 @@ def home(request):
             paginator = Paginator(other_images, 5)
             page_obj = paginator.get_page(1)
             show_followed = False
+            suggested = True
 
         html = render_to_string(
             "images/image/list_images.html",
-            {"page_obj": page_obj},
+            {"page_obj": page_obj, "suggested": suggested},
             request=request
         )
         return JsonResponse({
@@ -116,18 +122,18 @@ def home(request):
             "next_followed": "1" if show_followed else "0"
         })
 
-    # Suggested users (not the logged-in user and not already followed)
+    # Suggested users (excluding already followed + self)
     suggested_users = User.objects.exclude(id=user.id).exclude(
         id__in=followed_users
     ).select_related('profile')[:10]
 
-    # Full page render
     return render(
         request,
         "account/dashboard.html",
         {
             "page_obj": page_obj,
             "suggested_users": suggested_users,
+            "suggested": suggested,
         }
     )
 
@@ -216,14 +222,16 @@ def user_list(request):
 def user_detail(request, username):
     user = get_object_or_404(User, username=username, is_active=True)
     return render(
-        request, "account/user/detail.html", {"section": "people", "user": user}
+        request, "account/user/detail.html",
+        {"section": "people", "user": user}
     )
 
 
 @login_required
 def my_profile(request):
     return render(
-        request, "account/user/detail.html", {"section": "people", "user": request.user}
+        request, "account/user/detail.html",
+        {"section": "people", "user": request.user}
     )
 
 
