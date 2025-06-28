@@ -18,7 +18,7 @@
   <div class="profile-pic-wrapper-mobile">
     <form id="story-upload-form" method="post" enctype="multipart/form-data" action="{% url 'upload_story' %}">
       {% csrf_token %}
-      <label for="story-upload-input" class="profile-pic clickable">
+      <label for="story-upload-input" class="profile-pic clickable" title="Upload photo or video to story">
         {% if user.profile.photo %}
         <img src="{% thumbnail user.profile.photo 120x120 crop='center' %}" alt="{{ user.get_full_name }}">
         {% else %}
@@ -28,7 +28,7 @@
           <i class="fas fa-plus"></i>
         </div>
       </label>
-      <input id="story-upload-input" type="file" name="images" accept="image/*" multiple hidden
+      <input id="story-upload-input" type="file" name="images" accept="image/*,video/*" multiple hidden
         onchange="document.getElementById('story-upload-form').submit();">
     </form>
   </div>
@@ -43,6 +43,7 @@
     </div>
   </div>
   {% endif %}
+
 
 
 
@@ -99,19 +100,17 @@
   {% for image in user.images_created.all %}
   <div class="grid-item">
     <a href="{{ image.get_absolute_url }}">
+      {% if image.image %}
       <img src="{% thumbnail image.image 300x300 crop='center' %}" alt="{{ image.title }}">
+      {% elif image.video %}
+      <video src="{{ image.video.url }}" muted autoplay loop style="width: 100%; border-radius: 8px;"></video>
+      {% endif %}
     </a>
   </div>
   {% empty %}
   <p>No posts yet.</p>
   {% endfor %}
 </div>
-</div>
-{% if request.user == user %}
-<a href="{% url 'images:create' %}" class="floating-upload-btn" title="Add new post">
-  <i class="fas fa-plus"></i>
-</a>
-{% endif %}
 
 {% endblock %}
 

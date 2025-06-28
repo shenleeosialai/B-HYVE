@@ -334,14 +334,19 @@ def upload_story(request):
         uploaded_files = request.FILES.getlist('images')
 
         if not uploaded_files:
-            return HttpResponse("No images uploaded", status=400)
+            return HttpResponse("No media uploaded", status=400)
 
-        # Create one story object for this session
         story = Story.objects.create(user=request.user)
 
-        # Attach all uploaded images
-        for image in uploaded_files:
-            StoryImage.objects.create(story=story, image=image)
+        for uploaded_file in uploaded_files:
+            content_type = uploaded_file.content_type
+
+            if content_type.startswith('image/'):
+                StoryImage.objects.create(story=story, image=uploaded_file)
+            elif content_type.startswith('video/'):
+                StoryImage.objects.create(story=story, video=uploaded_file)
+            else:
+                continue  # Ignore unsupported files
 
         return redirect('user_detail', username=request.user.username)
 

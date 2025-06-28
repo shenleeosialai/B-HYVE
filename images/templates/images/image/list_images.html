@@ -2,14 +2,19 @@
 
 <div class="grid-container">
   {% for image in images %}
-  <div class="grid-item">
-    <a href="{{ image.get_absolute_url }}">
-      {% thumbnail image.image 400x400 crop="center" as im %}
-      <img src="{{ im.url }}" alt="{{ image.title }}">
-    </a>
-  </div>
+    <div class="grid-item">
+      <a href="{{ image.get_absolute_url }}">
+        {% if image.image %}
+          {% thumbnail image.image 400x400 crop="center" as im %}
+            <img src="{{ im.url }}" alt="{{ image.title }}">
+        {% elif image.video %}
+          <video src="{{ image.video.url }}" muted autoplay loop style="width: 100%; border-radius: 8px;"></video>
+        {% endif %}
+      </a>
+    </div>
   {% endfor %}
 </div>
+
 
 {% for image in page_obj %}
 <div class="insta-post fade-in">

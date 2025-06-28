@@ -31,21 +31,29 @@ r = redis.Redis(
 @login_required
 def image_create(request):
     if request.method == "POST":
-        images = request.FILES.getlist("image")
+        media_files = request.FILES.getlist("image")
         form = ImageCreateForm(request.POST)
 
         if form.is_valid():
-            for img in images:
+            for file in media_files:
                 instance = Image(
                     user=request.user,
                     title=form.cleaned_data.get("title"),
                     url=form.cleaned_data.get("url"),
                     description=form.cleaned_data.get("description"),
                 )
-                instance.image = img
+
+                content_type = file.content_type
+                if content_type.startswith("image/"):
+                    instance.image = file
+                elif content_type.startswith("video/"):
+                    instance.video = file
+                else:
+                    continue  # Skip unsupported files
+
                 instance.save()
 
-            messages.success(request, "Images uploaded successfully")
+            messages.success(request, "Media uploaded successfully")
             return redirect("user_detail", username=request.user.username)
     else:
         form = ImageCreateForm()

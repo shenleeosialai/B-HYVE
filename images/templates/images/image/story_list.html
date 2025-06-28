@@ -11,25 +11,29 @@
       "images": [
         {% for story in stories %}
           {% for img in story.images.all %}
-            {
-              "url": "{{ img.image.url }}",
-              "views": {{ img.viewers.count }},
-              "viewer_list": [
-                {% for v in img.viewers.all %}
-                {
-                  "username": "{{ v.username }}",
-                  "profile": "{% if v.profile.photo %}{{ v.profile.photo.url }}{% else %}{% static 'images/profile-user.avif' %}{% endif %}"
-                }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-              ]
-            }{% if not forloop.last or not forloop.parentloop.last %},{% endif %}
+           {
+  "url": "{% if img.image %}{{ img.image.url }}{% elif img.video %}{{ img.video.url }}{% endif %}",
+  "type": "{% if img.image %}image{% elif img.video %}video{% endif %}",
+  "views": {{ img.viewers.count }},
+  "viewer_list": [
+    {% for v in img.viewers.all %}
+    {
+      "username": "{{ v.username }}",
+      "profile": "{% if v.profile.photo %}{{ v.profile.photo.url }}{% else %}{% static 'images/profile-user.avif' %}{% endif %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+{% if not forloop.last or not forloop.parentloop.last %},{% endif %}
           {% endfor %}
         {% endfor %}
       ],
       "photo_url": "{% if user.profile.photo %}{{ user.profile.photo.url }}{% else %}{% static 'images/profile-user.avif' %}{% endif %}"
     }
     </script>
-    <img src="{% if user.profile.photo %}{{ user.profile.photo.url }}{% else %}{% static 'images/profile-user.avif' %}{% endif %}" alt="{{ user.username }}">
+    <img
+      src="{% if user.profile.photo %}{{ user.profile.photo.url }}{% else %}{% static 'images/profile-user.avif' %}{% endif %}"
+      alt="{{ user.username }}">
     <span class="story-username">{{ user.username }}</span>
   </div>
   {% endif %}
@@ -40,9 +44,10 @@
 <div id="storyModal" class="modal hidden">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <a id="storyUserLink" href="#" class="d-flex align-items-center gap-2" style="text-decoration: none; color: white;">
+      <a id="storyUserLink" href="#" class="d-flex align-items-center gap-2"
+        style="text-decoration: none; color: white;">
         <img id="storyUserPhoto" src="" class="avatar" alt="profile"
-             style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+          style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
         <strong id="storyUsername"></strong>
       </a>
       <span class="close" onclick="closeStoryModal()" style="font-size: 24px;">&times;</span>
@@ -66,148 +71,148 @@
 </div>
 
 <script>
-let currentImageIndex = 0;
-let currentImages = [];
-let autoplayTimer;
-let activeUsername = '';
+  let currentImageIndex = 0;
+  let currentImages = [];
+  let autoplayTimer;
+  let activeUsername = '';
 
-function openStoryModal(username) {
-  const dataEl = document.getElementById('user_' + username);
-  if (!dataEl) return;
+  function openStoryModal(username) {
+    const dataEl = document.getElementById('user_' + username);
+    if (!dataEl) return;
 
-  let userData = JSON.parse(dataEl.textContent.trim());
-  const { images, photo_url } = userData;
+    let userData = JSON.parse(dataEl.textContent.trim());
+    const { images, photo_url } = userData;
 
-  currentImages = images;
-  activeUsername = username;
-  currentImageIndex = 0;
+    currentImages = images;
+    activeUsername = username;
+    currentImageIndex = 0;
 
-  document.getElementById("storyUsername").textContent = username;
-  document.getElementById("storyUserPhoto").src = photo_url || "/static/images/profile-user.avif";
-  document.getElementById("storyUserPhoto").alt = username;
-  document.getElementById("storyUserLink").href = `/account/users/${username}/`;
+    document.getElementById("storyUsername").textContent = username;
+    document.getElementById("storyUserPhoto").src = photo_url || "/static/images/profile-user.avif";
+    document.getElementById("storyUserPhoto").alt = username;
+    document.getElementById("storyUserLink").href = `/account/users/${username}/`;
 
-  const storySlides = document.getElementById('storySlides');
-  const storyProgress = document.getElementById('storyProgress');
-  storySlides.innerHTML = '';
-  storyProgress.innerHTML = '';
+    const storySlides = document.getElementById('storySlides');
+    const storyProgress = document.getElementById('storyProgress');
+    storySlides.innerHTML = '';
+    storyProgress.innerHTML = '';
 
-  images.forEach((imgData, i) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'story-image-wrapper';
-    wrapper.style.position = 'relative';
+    images.forEach((imgData, i) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'story-image-wrapper';
+      wrapper.style.position = 'relative';
 
-    const img = document.createElement('img');
-    img.src = typeof imgData === 'string' ? imgData : imgData.url;
-    img.className = i === 0 ? 'active' : '';
-    wrapper.appendChild(img);
+      const img = document.createElement('img');
+      img.src = typeof imgData === 'string' ? imgData : imgData.url;
+      img.className = i === 0 ? 'active' : '';
+      wrapper.appendChild(img);
 
-    if (username === "{{ request.user.username }}") {
-      const deleteBtn = document.createElement('button');
-      deleteBtn.innerHTML = '🗑';
-      deleteBtn.className = 'story-image-delete';
-      deleteBtn.title = 'Delete';
-      deleteBtn.onclick = () => deleteStoryImage(imgData.url, i);
-      deleteBtn.style.cssText = `position:absolute;top:6px;right:8px;background:rgba(0,0,0,.5);border:none;font-size:18px;color:white;cursor:pointer;z-index:1000;padding:4px 6px;border-radius:4px;`;
-      wrapper.appendChild(deleteBtn);
+      if (username === "{{ request.user.username }}") {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '🗑';
+        deleteBtn.className = 'story-image-delete';
+        deleteBtn.title = 'Delete';
+        deleteBtn.onclick = () => deleteStoryImage(imgData.url, i);
+        deleteBtn.style.cssText = `position:absolute;top:6px;right:8px;background:rgba(0,0,0,.5);border:none;font-size:18px;color:white;cursor:pointer;z-index:1000;padding:4px 6px;border-radius:4px;`;
+        wrapper.appendChild(deleteBtn);
 
-      const viewBtn = document.createElement('button');
-      viewBtn.innerHTML = `👁 ${imgData.views || 0}`;
-      viewBtn.title = 'Viewers';
-      viewBtn.onclick = () => showViewers(imgData.viewer_list || []);
-      viewBtn.style.cssText = `position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:white;font-size:14px;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;z-index:1000;`;
-      wrapper.appendChild(viewBtn);
-    }
-
-    storySlides.appendChild(wrapper);
-
-    const bar = document.createElement('div');
-    bar.className = 'progress-bar' + (i === 0 ? ' active' : '');
-    storyProgress.appendChild(bar);
-  });
-
-  document.getElementById('storyModal').classList.remove('hidden');
-  startAutoplay();
-}
-
-function deleteStoryImage(imgUrl, index) {
-  if (!confirm("Delete this story image?")) return;
-
-  fetch("{% url 'images:delete_story_image' %}", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': '{{ csrf_token }}'
-    },
-    body: JSON.stringify({ image_url: imgUrl })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'ok') {
-        currentImages.splice(index, 1);
-        document.querySelectorAll('#storySlides .story-image-wrapper')[index]?.remove();
-        document.querySelectorAll('.progress-bar')[index]?.remove();
-
-        if (currentImages.length === 0) {
-          closeStoryModal();
-        } else {
-          showImageAt(Math.min(index, currentImages.length - 1));
-        }
-      } else {
-        alert(data.message || "Couldn't delete story image.");
+        const viewBtn = document.createElement('button');
+        viewBtn.innerHTML = `👁 ${imgData.views || 0}`;
+        viewBtn.title = 'Viewers';
+        viewBtn.onclick = () => showViewers(imgData.viewer_list || []);
+        viewBtn.style.cssText = `position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:white;font-size:14px;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;z-index:1000;`;
+        wrapper.appendChild(viewBtn);
       }
-    });
-}
 
-function showViewers(viewers) {
-  const modal = document.getElementById('viewerModal');
-  const list = document.getElementById('viewerList');
-  list.innerHTML = '';
-  viewers.forEach(user => {
-    const li = document.createElement('li');
-    li.innerHTML = `
+      storySlides.appendChild(wrapper);
+
+      const bar = document.createElement('div');
+      bar.className = 'progress-bar' + (i === 0 ? ' active' : '');
+      storyProgress.appendChild(bar);
+    });
+
+    document.getElementById('storyModal').classList.remove('hidden');
+    startAutoplay();
+  }
+
+  function deleteStoryImage(imgUrl, index) {
+    if (!confirm("Delete this story image?")) return;
+
+    fetch("{% url 'images:delete_story_image' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify({ image_url: imgUrl })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'ok') {
+          currentImages.splice(index, 1);
+          document.querySelectorAll('#storySlides .story-image-wrapper')[index]?.remove();
+          document.querySelectorAll('.progress-bar')[index]?.remove();
+
+          if (currentImages.length === 0) {
+            closeStoryModal();
+          } else {
+            showImageAt(Math.min(index, currentImages.length - 1));
+          }
+        } else {
+          alert(data.message || "Couldn't delete story image.");
+        }
+      });
+  }
+
+  function showViewers(viewers) {
+    const modal = document.getElementById('viewerModal');
+    const list = document.getElementById('viewerList');
+    list.innerHTML = '';
+    viewers.forEach(user => {
+      const li = document.createElement('li');
+      li.innerHTML = `
       <a href="/account/users/${user.username}/" style="display: flex; align-items: center; text-decoration: none; color: white; margin: 8px 0;">
         <img src="${user.profile}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px;">
         <strong>${user.username}</strong>
       </a>
     `;
-    list.appendChild(li);
-  });
-  modal.classList.remove('hidden');
-}
-
-function showImageAt(index) {
-  const images = document.querySelectorAll('#storySlides img');
-  const bars = document.querySelectorAll('.progress-bar');
-  if (index < 0 || index >= images.length) return;
-  images.forEach((img, i) => img.classList.toggle('active', i === index));
-  bars.forEach((bar, i) => bar.classList.toggle('active', i === index));
-  currentImageIndex = index;
-}
-
-function nextStoryImage() {
-  if (currentImageIndex + 1 < currentImages.length) {
-    showImageAt(currentImageIndex + 1);
-    startAutoplay();
-  } else {
-    closeStoryModal();
+      list.appendChild(li);
+    });
+    modal.classList.remove('hidden');
   }
-}
 
-function prevStoryImage() {
-  if (currentImageIndex - 1 >= 0) {
-    showImageAt(currentImageIndex - 1);
-    startAutoplay();
+  function showImageAt(index) {
+    const images = document.querySelectorAll('#storySlides img');
+    const bars = document.querySelectorAll('.progress-bar');
+    if (index < 0 || index >= images.length) return;
+    images.forEach((img, i) => img.classList.toggle('active', i === index));
+    bars.forEach((bar, i) => bar.classList.toggle('active', i === index));
+    currentImageIndex = index;
   }
-}
 
-function startAutoplay() {
-  clearTimeout(autoplayTimer);
-  autoplayTimer = setTimeout(() => nextStoryImage(), 5000);
-}
+  function nextStoryImage() {
+    if (currentImageIndex + 1 < currentImages.length) {
+      showImageAt(currentImageIndex + 1);
+      startAutoplay();
+    } else {
+      closeStoryModal();
+    }
+  }
 
-function closeStoryModal() {
-  clearTimeout(autoplayTimer);
-  document.getElementById('storyModal').classList.add('hidden');
-}
+  function prevStoryImage() {
+    if (currentImageIndex - 1 >= 0) {
+      showImageAt(currentImageIndex - 1);
+      startAutoplay();
+    }
+  }
+
+  function startAutoplay() {
+    clearTimeout(autoplayTimer);
+    autoplayTimer = setTimeout(() => nextStoryImage(), 5000);
+  }
+
+  function closeStoryModal() {
+    clearTimeout(autoplayTimer);
+    document.getElementById('storyModal').classList.add('hidden');
+  }
 </script>
