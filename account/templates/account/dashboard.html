@@ -101,13 +101,17 @@
 
 <div id="post-container">
   {% if page_obj.has_other_pages or page_obj.object_list %}
-  {% for image in page_obj %}
+  {% for image in images %}
   <div class="insta-post fade-in">
     <div class="insta-header mb-2 d-flex align-items-center gap-2">
       <img src="{{ image.user.profile.photo.url }}" class="avatar" alt="{{ image.user.username }}">
       <div class="post-info">
         <strong>
-          <a href="{% url 'user_detail' image.user.username %}" class="username-link">{{ image.user.username }}</a>
+          {% if image.user and image.user.username %}
+          <a href="{% url 'user_detail' image.user.username %}" class="username-link">
+            {{ image.user.username }}
+          </a>
+
           {% if image.user != request.user %}
           {% if not image.is_following %}
           <span class="suggested-label">Suggested</span>
@@ -116,13 +120,16 @@
           <button class="follow-btn" data-user-id="{{ image.user.id }}" data-action="unfollow">Unfollow</button>
           {% endif %}
           {% endif %}
+          {% else %}
+          <span class="username-link">Unknown user</span>
+          {% endif %}
         </strong>
       </div>
     </div>
     <div class="insta-content-wrapper d-flex flex-column flex-md-row gap-4">
       <div class="insta-image-wrapper flex-shrink-0">
         {% if image.image %}
-        {% thumbnail image.image 1080x0 as im %}
+        {% thumbnail image.image 1080x1080  as im %}
         <img src="{{ im.url }}" class="insta-img" alt="{{ image.title }}">
         {% elif image.video %}
         <video src="{{ image.video.url }}" {% if image.autoplay %}autoplay{% endif %} muted loop controls
@@ -290,41 +297,53 @@
 
   const observer = new IntersectionObserver((entries) => {
   if (entries[0].isIntersecting && !loading && hasMore) {
-  loading = true;
-  fetch(`?page=${page}&followed=${followed}`, {
-  headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  })
-  .then(res => res.json())
-  .then(data => {
-  if (data.html.trim()) {
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = data.html;
-  tempDiv.querySelectorAll('.insta-post').forEach(post => {
-  post.classList.add('fade-in');
-  postContainer.appendChild(post);
-  });
-  bindEvents();
-  page += 1;
-  followed = data.next_followed;
-  hasMore = data.has_more;
-  loading = false;
+    loading = true;
+    fetch(`?page=${page}&followed=${followed}`, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.html.trim()) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data.html;
+        const posts = tempDiv.querySelectorAll('.insta-post');
+        if (posts.length > 0) {
+          posts.forEach(post => {
+            post.classList.add('fade-in');
+            postContainer.appendChild(post);
+          });
+        } else {
+          hasMore = false;
+          endMessage.style.display = 'block';
+          observer.unobserve(scrollTrigger);
+        }
 
-  if (!hasMore && followed === '0') {
-  endMessage.style.display = 'block';
-  observer.unobserve(scrollTrigger);
+        bindEvents();
+        page += 1;
+        followed = data.next_followed;
+        hasMore = data.has_more;
+        loading = false;
+
+        if (!hasMore && followed === '0') {
+          endMessage.style.display = 'block';
+          observer.unobserve(scrollTrigger);
+        }
+      } else {
+        hasMore = false;
+        endMessage.style.display = 'block';
+        observer.unobserve(scrollTrigger);
+      }
+    });
   }
-  } else {
-  hasMore = false;
-  endMessage.style.display = 'block';
-  observer.unobserve(scrollTrigger);
-  }
-  });
-  }
-  }, {
+}, {
   root: null,
   threshold: 0.5,
   rootMargin: '0px'
-  });
+});
 
+// ✅ Only observe if the element exists
+if (scrollTrigger) {
   observer.observe(scrollTrigger);
+}
+
   {% endblock %}
