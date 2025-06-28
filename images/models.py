@@ -16,6 +16,7 @@ class Image(models.Model):
     )
     title = models.CharField(max_length=200, blank=True)
     slug = models.SlugField(max_length=200, blank=True)
+    video = models.FileField(upload_to='videos/', blank=True, null=True)
     image = models.ImageField(upload_to="images/%Y/%m/%d/")
     url = models.URLField(max_length=2000, blank=True)
     description = models.TextField(blank=True)
@@ -34,6 +35,9 @@ class Image(models.Model):
 
     def __str__(self):
         return self.title
+
+    def is_video(self): 
+        return bool(self.video)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -85,6 +89,11 @@ class StoryImage(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     viewers = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                      related_name='viewed_stories', blank=True)
+    video = models.FileField(upload_to='stories/videos/',
+                             blank=True, null=True)
+
+    def is_video(self):
+        return bool(self.video)
 
     def __str__(self):
         return f"Image for {self.story.user.username}'s story"

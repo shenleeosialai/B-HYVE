@@ -29,22 +29,30 @@
   <div class="insta-content-wrapper d-flex flex-column flex-md-row gap-4 mt-3">
 
     <!-- Image block with ratio logic preserved -->
+    {% if image.image %}
     {% widthratio image.image.width 4 1 as w_ratio %}
     {% widthratio image.image.height 5 1 as h_ratio %}
 
     {% if w_ratio == h_ratio %}
-      {% with "default-ratio" as extra_class %}
-      <div class="insta-image-wrapper {{ extra_class }} flex-shrink-0">
-        <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
-      </div>
-      {% endwith %}
+    {% with "default-ratio" as extra_class %}
+    <div class="insta-image-wrapper {{ extra_class }} flex-shrink-0">
+      <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+    </div>
+    {% endwith %}
     {% else %}
-      {% with "adaptive-ratio" as extra_class %}
-      <div class="insta-image-wrapper {{ extra_class }} flex-shrink-0">
-        <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
-      </div>
-      {% endwith %}
+    {% with "adaptive-ratio" as extra_class %}
+    <div class="insta-image-wrapper {{ extra_class }} flex-shrink-0">
+      <img src="{% thumbnail image.image 1080x0 %}" class="insta-img" alt="{{ image.title }}">
+    </div>
+    {% endwith %}
     {% endif %}
+
+    {% elif image.video %}
+    <div class="insta-image-wrapper video-wrapper flex-shrink-0">
+      <video src="{{ image.video.url }}" controls style="width: 100%; border-radius: 12px;"></video>
+    </div>
+    {% endif %}
+
 
     <!-- Post metadata -->
     <div class="post-meta">
@@ -61,7 +69,7 @@
 
       <!-- Likes -->
       <div class="likes">
-        Liked by <strong>{{ image.users_like.first.username }}</strong> and 
+        Liked by <strong>{{ image.users_like.first.username }}</strong> and
         <strong>{{ image.users_like.count|add:"-1" }} others</strong>
       </div>
 

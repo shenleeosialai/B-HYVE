@@ -77,130 +77,128 @@
     z-index: 1055;
   }
 </style>
-
 <div class="glass-card">
-  <h2>Upload Image</h2>
+  <h2>Upload Media</h2>
 
   <!-- Drag & Drop Area -->
   <div class="drag-drop-area" id="drop-area">
-    Drag & Drop your images here or click to select
-  </div>
-  <div id="cropper-container" style="display: none; margin-top: 1rem;">
-    <img id="image-preview" style="max-width: 100%; border-radius: 12px;" alt="Crop preview">
-    <button type="button" id="crop-button" class="btn btn-success mt-3">Crop & Upload</button>
+    Drag & Drop your images or videos here or click to select
   </div>
 
-  <div id="preview-container"></div>
+  <div id="cropper-container" style="display: none; margin-top: 1rem;">
+    <img id="image-preview" style="max-width: 100%; border-radius: 12px;" alt="Crop preview">
+    <button type="button" id="crop-button" class="btn btn-success mt-3">Crop & Post</button>
+  </div>
+
+  <div id="preview-container" style="margin-top: 1rem;"></div>
 
   <form method="post" enctype="multipart/form-data" id="upload-form">
     {% csrf_token %}
     {% for field in form %}
-    {% if field.name != "image" %}
-    <div class="mb-3">
-      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% if field.errors %}
-      <div class="text-danger">{{ field.errors }}</div>
+      {% if field.name != "image" %}
+      <div class="mb-3">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+        <div class="text-danger">{{ field.errors }}</div>
+        {% endif %}
+      </div>
       {% endif %}
-    </div>
-    {% endif %}
     {% endfor %}
 
-    <!-- This input must be inside the form and named `image` -->
-    <input type="file" name="image" id="file-input" accept="image/*" multiple hidden>
-
-    <button type="submit" class="btn btn-primary">Upload</button>
+    <input type="file" name="image" id="file-input" accept="image/*,video/*" multiple hidden>
+    <button type="submit" class="btn btn-primary mt-3">Post</button>
   </form>
-
 
   <!-- Toast -->
   {% if messages %}
-  <div class="toast align-items-center text-white bg-success border-0 show" id="upload-toast" role="alert"
-    aria-live="assertive" aria-atomic="true">
+  <div class="toast align-items-center text-white bg-success border-0 show" id="upload-toast" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="d-flex">
       <div class="toast-body">
         {% for message in messages %}{{ message }}{% endfor %}
       </div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-        aria-label="Close"></button>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
   </div>
   {% endif %}
+</div>
+
   {% endblock %}
 
   {% block domready %}
   const dropArea = document.getElementById("drop-area");
-  const fileInput = document.getElementById("file-input");
-  const cropperContainer = document.getElementById("cropper-container");
-  const previewImage = document.getElementById("image-preview");
-  const cropButton = document.getElementById("crop-button");
-  let cropper;
+const fileInput = document.getElementById("file-input");
+const cropperContainer = document.getElementById("cropper-container");
+const previewImage = document.getElementById("image-preview");
+const previewContainer = document.getElementById("preview-container");
+const cropButton = document.getElementById("crop-button");
+let cropper;
 
-  // Click area triggers file input
-  dropArea.addEventListener("click", () => fileInput.click());
+// Click on drop area triggers file input
+dropArea.addEventListener("click", () => fileInput.click());
 
-  // Handle file input
-  fileInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (event) => {
-  previewImage.src = event.target.result;
-  cropperContainer.style.display = "block";
-
-  if (cropper) cropper.destroy();
-  cropper = new Cropper(previewImage, {
-  aspectRatio: 1,
-  viewMode: 1,
-  dragMode: 'move',
-  autoCropArea: 1,
-  responsive: true,
-  zoomable: true,
-  scalable: true,
-  movable: true,
-  background: false,
-  });
-  };
-  reader.readAsDataURL(file);
-  });
-
-  // Drag and drop
-  dropArea.addEventListener("dragover", (e) => {
+// Drag and Drop
+dropArea.addEventListener("dragover", (e) => {
   e.preventDefault();
-  dropArea.classList.add("dragover");
-  });
-  dropArea.addEventListener("dragleave", () => {
-  dropArea.classList.remove("dragover");
-  });
-  dropArea.addEventListener("drop", (e) => {
+  dropArea.classList.add("drag-over");
+});
+
+dropArea.addEventListener("dragleave", () => {
+  dropArea.classList.remove("drag-over");
+});
+
+dropArea.addEventListener("drop", (e) => {
   e.preventDefault();
-  dropArea.classList.remove("dragover");
+  dropArea.classList.remove("drag-over");
+  handleFiles(e.dataTransfer.files);
+});
 
-  const file = e.dataTransfer.files[0];
-  if (!file) return;
+fileInput.addEventListener("change", () => {
+  handleFiles(fileInput.files);
+});
 
-  const reader = new FileReader();
-  reader.onload = (event) => {
-  previewImage.src = event.target.result;
-  cropperContainer.style.display = "block";
+function handleFiles(files) {
+  previewContainer.innerHTML = "";
+  cropperContainer.style.display = "none";
 
-  if (cropper) cropper.destroy();
-  cropper = new Cropper(previewImage, {
-  aspectRatio: 1,
-  viewMode: 1,
-  dragMode: 'move',
-  autoCropArea: 1,
-  zoomable: true,
-  movable: true,
-  background: false,
+  [...files].forEach(file => {
+    const type = file.type;
+
+    if (type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        previewImage.src = reader.result;
+        cropperContainer.style.display = "block";
+
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(previewImage, {
+          aspectRatio: 1,
+          viewMode: 1,
+          dragMode: 'move',
+          autoCropArea: 1,
+          responsive: true,
+          zoomable: true,
+          scalable: true,
+          movable: true,
+          background: false,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    else if (type.startsWith("video/")) {
+      const video = document.createElement("video");
+      video.src = URL.createObjectURL(file);
+      video.controls = true;
+      video.style.maxWidth = "100%";
+      video.style.borderRadius = "12px";
+      previewContainer.appendChild(video);
+    }
   });
-  };
-  reader.readAsDataURL(file);
-  });
+}
 
-  // Crop and upload
-  cropButton.addEventListener("click", () => {
+// Crop & Upload
+cropButton.addEventListener("click", () => {
   if (!cropper) return;
 
   const cropData = cropper.getData(true);
@@ -209,21 +207,21 @@
   const newHeight = Math.round(1080 / aspectRatio);
 
   cropper.getCroppedCanvas({
-  width: newWidth,
-  height: newHeight,
+    width: newWidth,
+    height: newHeight,
   }).toBlob((blob) => {
-
-  const file = new File([blob], "cropped.jpg", { type: "image/jpeg" });
-  const dataTransfer = new DataTransfer();
-  dataTransfer.items.add(file);
-  fileInput.files = dataTransfer.files;
-  document.getElementById("upload-form").submit();
+    const file = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    fileInput.files = dataTransfer.files;
+    document.getElementById("upload-form").submit();
   }, "image/jpeg", 0.95);
-  });
+});
 
-  // Toast init
-  if (document.getElementById("upload-toast")) {
+// Show toast if message exists
+if (document.getElementById("upload-toast")) {
   const toast = new bootstrap.Toast(document.getElementById("upload-toast"));
   toast.show();
-  }
+}
+
   {% endblock %}

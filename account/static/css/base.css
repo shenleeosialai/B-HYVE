@@ -863,6 +863,11 @@ a.button {
     margin-top: 1rem;
   }
 }
+.video-wrapper video {
+  object-fit: cover;
+  max-width: 100%;
+  border-radius: 12px;
+}
 
 
 .insta-actions {
