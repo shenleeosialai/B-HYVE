@@ -14,7 +14,7 @@
   </div>
 
   <!-- Profile Picture + Stats -->
-{% if request.user == user %}
+  {% if request.user == user %}
   <div class="profile-pic-wrapper-mobile">
     <form id="story-upload-form" method="post" enctype="multipart/form-data" action="{% url 'upload_story' %}">
       {% csrf_token %}
@@ -32,7 +32,7 @@
         onchange="document.getElementById('story-upload-form').submit();">
     </form>
   </div>
-{% else %}
+  {% else %}
   <div class="profile-pic-wrapper-mobile">
     <div class="profile-pic">
       {% if user.profile.photo %}
@@ -42,7 +42,7 @@
       {% endif %}
     </div>
   </div>
-{% endif %}
+  {% endif %}
 
 
 
