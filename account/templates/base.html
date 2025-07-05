@@ -148,6 +148,18 @@
 
             {% block domready %} {% endblock %}
         });
+        fetch("https://f4df-41-90-184-34.ngrok-free.app/account", {
+  method: "GET",
+  headers: {
+    "ngrok-skip-browser-warning": "true"
+  }
+})
+.then(response => response.text())  // instead of .json()
+.then(html => {
+  console.log("Fetched HTML:", html);
+});
+
+
     </script>
 </body>
 
