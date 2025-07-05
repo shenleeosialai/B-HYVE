@@ -14,7 +14,7 @@ services:
 
   celery:
     build: .
-    command: celery -A your_project worker --loglevel=info
+    command: celery -A bookmarks worker --loglevel=info
     volumes:
       - .:/code
     depends_on:
@@ -25,7 +25,7 @@ services:
 
   celery-beat:
     build: .
-    command: celery -A your_project beat --loglevel=info
+    command: celery -A bookmarks beat --loglevel=info
     volumes:
       - .:/code
     depends_on:

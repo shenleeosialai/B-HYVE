@@ -111,9 +111,11 @@
   <p>No posts yet.</p>
   {% endfor %}
 </div>
-
+</div>
+<a href="{% url 'images:create' %}" class="floating-upload-btn" title="Add new post">
+  <i class="fas fa-plus"></i>
+</a>
 {% endblock %}
-
 {% block domready %}
 const url = '{% url "user_follow" %}';
 const followButton = document.querySelector('a.follow');
