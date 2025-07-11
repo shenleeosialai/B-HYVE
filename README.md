@@ -29,7 +29,6 @@ A full-featured social media platform inspired by Modern social media platforms,
 
 ## 🚧 Planned Improvements
 
-- Video support for posts
 - Real-time notifications using Django Channels / WebSockets
 - Real-time chat using Django Channels / WebSockets
 - Improved ML model for trending content
@@ -40,20 +39,20 @@ A full-featured social media platform inspired by Modern social media platforms,
 
 1. Clone the repo:
    https://github.com/shenleeosialai/B-HYVE
-   cd B-HYVE
+2. cd B-HYVE
 
 ## Create a virtual environment and install dependencies:
 
-python -m venv env
-source env/bin/activate
-pip install -r requirements.txt
+1.python -m venv env
+2.source env/bin/activate
+3.pip install -r requirements.txt
 
 ## Configure your PostgreSQL database:
 
-python manage.py migrate
+1.python manage.py migrate
 redis-server
-celery -A bookmarks beat -l info
-python manage.py runserver
+2.celery -A bookmarks beat -l info
+3.python manage.py runserver
 
 🤝 Contributions
 Contributions, issues, and feature requests are welcome! Please fork the repository and submit a pull request.
