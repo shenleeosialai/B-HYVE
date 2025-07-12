@@ -8,6 +8,8 @@
 <div class="search-bar-container">
   <form method="get" action="{% url 'user_list' %}">
     <input type="text" name="q" placeholder="Search..." value="{{ query|default_if_none:'' }}">
+=======
+    <input type="text" name="q" placeholder="search..." value="{{ query|default_if_none:'' }}">
     <button type="submit">Search</button>
   </form>
 
@@ -41,6 +43,26 @@
 <div class="mt-3 px-2">
   <div class="text-muted fw-semibold" style="font-size: 0.50rem; margin-left: 0.5rem; margin-bottom: 5px;">Stories:Add
     from profile</div>
+=======
+  {% if users %}
+  <ul>
+    {% for user in users %}
+    <li>
+      <a href="{% url 'user_detail' user.username %}">
+        {{ user.username }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>User not found.</p>
+  {% endif %}
+  {% endif %}
+
+</div>
+<div class="mt-3 px-2">
+  <div class="text-muted fw-semibold" style="font-size: 0.50rem; margin-left: 0.5rem; margin-bottom: 5px;">Stories:Add from profile</div>
+>>>>>>> 967e6de772d5851103f357be2a9c8386b7957e87
 </div>
 {% include "images/image/story_list.html" %}
 

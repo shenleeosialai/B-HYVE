@@ -13,7 +13,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import mimetypes
 from pathlib import Path
 from django.urls import reverse_lazy
+<<<<<<< HEAD
 from decouple import config
+=======
+>>>>>>> 967e6de772d5851103f357be2a9c8386b7957e87
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -107,8 +110,13 @@ AUTHENTICATION_BACKENDS = [
     'social_core.backends.google.GoogleOAuth2',
 ]
 
+<<<<<<< HEAD
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+=======
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '834014884051-5ete3phku05310rpan9f6uutgaj0dbes.apps.googleusercontent.com'  # Google Client ID
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'  # Google Client Secret
+>>>>>>> 967e6de772d5851103f357be2a9c8386b7957e87
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 SOCIAL_AUTH_PIPELINE = [
@@ -187,9 +195,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+<<<<<<< HEAD
 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+=======
+>>>>>>> 967e6de772d5851103f357be2a9c8386b7957e87
