@@ -7,8 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from .forms import LoginForm, UserRegistrationForm, UserEditForm, \
-    ProfileEditForm
+from .forms import LoginForm, UserRegistrationForm, UserEditForm, ProfileEditForm
 from .models import Profile
 from .models import Contact
 from actions.utils import create_action
@@ -54,8 +53,7 @@ def dashboard(request):
         "target"
     )[:10]
     return render(
-        request, "account/dashboard.html",
-        {"section": "dashboard", "actions": actions}
+        request, "account/dashboard.html", {"section": "dashboard", "actions": actions}
     )
 
 
@@ -63,38 +61,39 @@ def dashboard(request):
 def home(request):
     user = request.user
     page = int(request.GET.get("page", 1))
-    show_followed = request.GET.get("followed", "1") == "1"
+    is_initial_load = page == 1 and request.headers.get("x-requested-with") != "XMLHttpRequest"
 
     # Get followed users (excluding self)
     followed_users = list(
         user.following.exclude(id=user.id).values_list("id", flat=True)
     )
-    is_new_user = len(followed_users) == 0
 
-    if is_new_user:
-        show_followed = False
+    # Session keys for shuffled image IDs
+    session_key = "random_image_ids_combined"
 
-    key = "random_image_ids_followed" if show_followed else "random_image_ids_others"
-    is_initial_load = page == 1 and request.headers.get("x-requested-with") != "XMLHttpRequest"
+    if is_initial_load or session_key not in request.session:
+        # Followed posts
+        followed_images = list(
+            Image.objects.filter(user__in=followed_users).values_list("id", flat=True)
+        )
+        random.shuffle(followed_images)
 
-    # Fresh shuffle on first load or if session key is missing
-    if is_initial_load or key not in request.session:
-        if show_followed:
-            base_queryset = Image.objects.filter(user__in=followed_users)
-            suggested = False
-        else:
-            base_queryset = Image.objects.exclude(user=user).exclude(user__in=followed_users)
-            suggested = True
+        # Suggested posts (not followed and not self)
+        suggested_images = list(
+            Image.objects.exclude(user=user)
+            .exclude(user__in=followed_users)
+            .values_list("id", flat=True)
+        )
+        random.shuffle(suggested_images)
 
-        all_ids = list(base_queryset.values_list("id", flat=True))
-        random.shuffle(all_ids)
-        request.session[key] = all_ids
+        # Combine followed first, then suggested
+        all_image_ids = followed_images + suggested_images
+        request.session[session_key] = all_image_ids
     else:
-        all_ids = request.session.get(key, [])
-        suggested = not show_followed
+        all_image_ids = request.session.get(session_key, [])
 
     # Paginate 5 per scroll
-    paginator = Paginator(all_ids, 5)
+    paginator = Paginator(all_image_ids, 5)
     page_obj = paginator.get_page(page)
     page_id_list = list(page_obj.object_list)
 
@@ -115,20 +114,19 @@ def home(request):
     images_dict = {img.id: img for img in images}
     images = [images_dict[img_id] for img_id in page_id_list if img_id in images_dict]
 
-    # AJAX infinite scroll response
+    # AJAX response for infinite scroll
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         html = render_to_string(
             "images/image/list_images.html",
-            {"page_obj": page_obj, "images": images, "suggested": suggested},
+            {"page_obj": page_obj, "images": images, "suggested": False},
             request=request,
         )
         return JsonResponse({
             "html": html,
             "has_more": page_obj.has_next(),
-            "next_followed": "1" if show_followed else "0",
         })
 
-    # Suggested users for sidebar or top bar
+    # Suggested users for top bar
     suggested_users = (
         User.objects.exclude(id=user.id)
         .exclude(id__in=followed_users)
@@ -142,9 +140,10 @@ def home(request):
             "page_obj": page_obj,
             "images": images,
             "suggested_users": suggested_users,
-            "suggested": suggested,
+            "suggested": False,
         },
     )
+
 
 
 def register(request):
@@ -198,21 +197,38 @@ def user_list(request):
     ajax = request.GET.get("ajax")
     users = []
     searched = False
+    error = None
+    suggestions = []
 
     if query is not None:
         query = query.strip()
-        searched = True
-        if query:
-            try:
-                user = User.objects.get(username__iexact=query)
-                users = [user]
-            except User.DoesNotExist:
-                users = []
-        else:
-            users = []  # Empty input still counts as "searched"
 
+        # Prevent blank searches from proceeding
+        if query == "":
+            query = None  # Normalize to None so nothing is marked as searched
+
+    if query:
+        searched = True
+        try:
+            # Try exact match first
+            user = User.objects.get(username__iexact=query)
+            users = [user]
+        except User.DoesNotExist:
+            error = "User not found"
+            # Fuzzy match for similar usernames
+            suggestions = list(
+                User.objects.filter(username__icontains=query)
+                .exclude(username__iexact=query)
+                .order_by("username")[:10]
+            )
+
+    # AJAX response: return exact or suggested users
     if ajax:
-        return JsonResponse([{"username": u.username} for u in users], safe=False)
+        results = users if users else suggestions
+        return JsonResponse(
+            [{"username": u.username} for u in results],
+            safe=False
+        )
 
     return render(
         request,
@@ -221,6 +237,8 @@ def user_list(request):
             "users": users,
             "query": query,
             "searched": searched,
+            "error": error,
+            "suggestions": suggestions,
         },
     )
 
